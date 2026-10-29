@@ -583,7 +583,7 @@ const FONT_BOLD_B64 = "__FONT_BOLD__";
   const getP = (path) => path.split(".").reduce((o, k) => o[k], S);
   const setP = (path, v) => { const k = path.split("."); const last = k.pop(); k.reduce((o, kk) => o[kk], S)[last] = v; };
 
-  let timer = null, lastPages = [], dirty = !!localStorage_has(), db = null, canWrite = true, savedList = [];
+  let timer = null, lastPages = [], dirty = !!localStorage_has(), store = null, canWrite = true, savedList = [];
   function refresh() {
     if (!fontsReady) return;
     try {
@@ -733,34 +733,26 @@ const FONT_BOLD_B64 = "__FONT_BOLD__";
   const newId = () => "c" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   let busySave = false;
   async function saveToServer(asNew) {
-    if (!db || busySave) return;
+    if (!store || busySave) return;
     busySave = true;
     const b = $("saveSrv"), label = b.textContent; b.disabled = true; b.textContent = "保存中…";
     try {
       const id = !asNew && S._id ? S._id : newId();
       const st = JSON.parse(JSON.stringify(S)); delete st._id;
-      const maps = st.sites.map((s) => { const m = s.map || ""; s.hasMap = !!m; s.map = ""; return m; });
-      const prev = savedList.find((d) => d.id === id);
-      for (let i = 0; i < maps.length; i++) {
-        const ref = db.doc("contracts/" + id + "/maps/s" + i);
-        if (maps[i]) await ref.set({ data: maps[i] }); else if (prev && i < (prev.nSites || 0)) await ref.delete();
-      }
-      if (prev) for (let i = maps.length; i < (prev.nSites || 0); i++) await db.doc("contracts/" + id + "/maps/s" + i).delete();
-      await db.doc("contracts/" + id).set({ title: docTitle(), job: S.job || "", start: S.start || "", end: S.end || "", nSites: maps.length, updatedAt: Date.now(), state: JSON.stringify(st) });
+      st.sites.forEach((s) => { s.hasMap = !!s.map; });
+      const meta = { title: docTitle(), job: S.job || "", start: S.start || "", end: S.end || "", nSites: st.sites.length, updatedAt: Date.now() };
+      await store.save(id, meta, st, savedList.find((d) => d.id === id));
       S._id = id; dirty = false; persist(); showState(); renderSaved();
       toast(asNew ? "コピーとして保存しました" : "サーバーに保存しました");
     } catch (e) {
-      toast(e && (e.code === "invalid_argument" || e.code === "revoked") ? "保存する権限がありません" : e && e.code === "quota_exceeded" ? "保存の上限に達しています。古い契約書を削除してください" : "保存できませんでした：" + ((e && e.message) || e));
+      toast(e && (e.code === "invalid_argument" || e.code === "revoked" || e.status === 401 || e.status === 403) ? "保存する権限がありません（Vercelにログインしているか確認してください）" : e && (e.code === "quota_exceeded" || e.status === 413) ? "保存の上限に達しています。地図画像を小さくするか、古い契約書を削除してください" : "保存できませんでした：" + ((e && e.message) || e));
     } finally { busySave = false; b.disabled = false; b.textContent = label; }
   }
   async function loadDoc(id) {
-    const snap = await db.doc("contracts/" + id).get();
-    if (!snap.exists) { toast("契約書が見つかりません"); return null; }
-    const st = Object.assign(DEFAULTS(), JSON.parse(snap.data().state));
-    for (let i = 0; i < st.sites.length; i++) {
-      if (st.sites[i].hasMap) { const m = await db.doc("contracts/" + id + "/maps/s" + i).get(); st.sites[i].map = m.exists ? m.data().data : ""; if (!m.exists) st.sites[i].hasMap = false; }
-    }
-    st._id = id; st._title = snap.data().title;
+    const r = await store.load(id);
+    if (!r) { toast("契約書が見つかりません"); return null; }
+    const st = Object.assign(DEFAULTS(), r.state);
+    st._id = id; st._title = r.title;
     return st;
   }
   let viewing = null;
@@ -787,8 +779,7 @@ const FONT_BOLD_B64 = "__FONT_BOLD__";
   }
   async function delDoc(d) {
     try {
-      for (let i = 0; i < (d.nSites || 0); i++) await db.doc("contracts/" + d.id + "/maps/s" + i).delete();
-      await db.doc("contracts/" + d.id).delete();
+      await store.remove(d);
       if (S._id === d.id) { delete S._id; persist(); }
       toast("削除しました");
     } catch (e) { toast("削除できませんでした：" + ((e && e.message) || e)); }
@@ -797,18 +788,70 @@ const FONT_BOLD_B64 = "__FONT_BOLD__";
     const keep = S.contractor; S = DEFAULTS(); S.contractor = keep; S.orderer = { name: "", address: "", rep: "" };
     dirty = false; persist(); refillForm(); refresh(); renderSaved(); toast("新しい契約書を作成しました");
   }
+  /* claude.ai の db を使う保存先（地図画像は別ドキュメントに分けて持つ） */
+  function claudeStore(db) {
+    return {
+      subscribe(ok, err) {
+        db.collection("contracts").orderBy("updatedAt", "desc").limit(200).onSnapshot((snap) => ok(snap.docs.map((d) => Object.assign({ id: d.id }, d.data()))), err);
+      },
+      async save(id, meta, st, prev) {
+        st = JSON.parse(JSON.stringify(st));
+        const maps = st.sites.map((s) => { const m = s.map || ""; s.map = ""; return m; });
+        for (let i = 0; i < maps.length; i++) {
+          const ref = db.doc("contracts/" + id + "/maps/s" + i);
+          if (maps[i]) await ref.set({ data: maps[i] }); else if (prev && i < (prev.nSites || 0)) await ref.delete();
+        }
+        if (prev) for (let i = maps.length; i < (prev.nSites || 0); i++) await db.doc("contracts/" + id + "/maps/s" + i).delete();
+        await db.doc("contracts/" + id).set(Object.assign({}, meta, { state: JSON.stringify(st) }));
+      },
+      async load(id) {
+        const snap = await db.doc("contracts/" + id).get();
+        if (!snap.exists) return null;
+        const st = JSON.parse(snap.data().state);
+        for (let i = 0; i < st.sites.length; i++) {
+          if (st.sites[i].hasMap) { const m = await db.doc("contracts/" + id + "/maps/s" + i).get(); st.sites[i].map = m.exists ? m.data().data : ""; if (!m.exists) st.sites[i].hasMap = false; }
+        }
+        return { title: snap.data().title, state: st };
+      },
+      async remove(d) {
+        for (let i = 0; i < (d.nSites || 0); i++) await db.doc("contracts/" + d.id + "/maps/s" + i).delete();
+        await db.doc("contracts/" + d.id).delete();
+      }
+    };
+  }
+  /* Vercel などの一般のWebで使う保存先（/api/contracts） */
+  function httpStore() {
+    const subs = []; let timer = null;
+    const api = async (method, id, body) => {
+      const r = await fetch("/api/contracts" + (id ? "?id=" + encodeURIComponent(id) : ""), { method, cache: "no-store", headers: body ? { "content-type": "application/json" } : undefined, body: body ? JSON.stringify(body) : undefined });
+      if (!r.ok) { const e = new Error("サーバーの応答エラー (" + r.status + ")"); e.status = r.status; throw e; }
+      return r.status === 204 ? null : r.json();
+    };
+    const pull = async () => { try { const j = await api("GET"); subs.forEach((f) => f.ok(j.items)); } catch (e) { subs.forEach((f) => f.err && f.err(e)); } };
+    return {
+      probe: () => api("GET"),
+      subscribe(ok, err) { subs.push({ ok, err }); pull(); clearInterval(timer); timer = setInterval(() => { if (!document.hidden) pull(); }, 30000); },
+      async save(id, meta, st) { await api("PUT", id, { meta, state: st }); pull(); },
+      async load(id) { try { const j = await api("GET", id); return { title: j.meta.title, state: j.state }; } catch (e) { if (e.status === 404) return null; throw e; } },
+      async remove(d) { await api("DELETE", d.id); pull(); }
+    };
+  }
   async function initServer() {
     try {
-      db = await cap("db");
-      if (!db) return;
-      try { const u = await cap("user"); if (u && u.can && (await u.can("data.write")) === false) canWrite = false; } catch (e) {}
+      const db = await cap("db");
+      if (db) {
+        store = claudeStore(db);
+        try { const u = await cap("user"); if (u && u.can && (await u.can("data.write")) === false) canWrite = false; } catch (e) {}
+      } else {
+        if (!/^https?:$/.test(location.protocol)) return;
+        const h = httpStore();
+        try { await h.probe(); } catch (e) { return; }
+        store = h;
+      }
       $("savedSec").hidden = false;
       if (canWrite) { $("saveSrv").hidden = false; } else { $("newDoc").hidden = true; $("saveCopy").hidden = true; }
-      db.collection("contracts").orderBy("updatedAt", "desc").limit(200).onSnapshot((snap) => {
-        savedList = snap.docs.map((d) => Object.assign({ id: d.id }, d.data()));
-        renderSaved();
-      }, (e) => { $("saved").innerHTML = '<p class="empty">保存済みの一覧を読み込めませんでした。</p>'; });
-    } catch (e) { db = null; }
+      store.subscribe((items) => { savedList = items; renderSaved(); }, () => { $("saved").innerHTML = '<p class="empty">保存済みの一覧を読み込めませんでした。</p>'; });
+    } catch (e) { store = null; }
   }
 
   document.addEventListener("DOMContentLoaded", init);

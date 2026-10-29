@@ -1,0 +1,9 @@
+{
+  "name": "jyosetu-keiyaku",
+  "version": "1.0.0",
+  "private": true,
+  "description": "除雪契約書メーカー",
+  "dependencies": {
+    "@vercel/blob": "^2.8.2"
+  }
+}

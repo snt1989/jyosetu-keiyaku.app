@@ -1,2 +1,4 @@
 fonts/
 tmp.otf
+node_modules/
+.vercel/
