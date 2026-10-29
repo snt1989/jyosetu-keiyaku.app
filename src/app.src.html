@@ -235,6 +235,8 @@ const FONT_BOLD_B64 = "__FONT_BOLD__";
     if (saved && typeof saved === "object") S = Object.assign(DEFAULTS(), saved);
   } catch (e) {}
   function localStorage_has() { try { return !!localStorage.getItem(STORE); } catch (e) { return false; } }
+  // claude.ai 上では window.claude の機能（PDF保存・サーバー保存）を使い、それ以外では標準のダウンロードに切り替える
+  async function cap(name) { try { return window.claude ? (await window.claude.use(name)) || null : null; } catch (e) { return null; } }
   function persist() { try { localStorage.setItem(STORE, JSON.stringify(S)); } catch (e) {} }
 
   /* ---------- フォント ---------- */
@@ -668,12 +670,18 @@ const FONT_BOLD_B64 = "__FONT_BOLD__";
     const btn = btnEl || $("save");
     btn.disabled = true; const label = btn.textContent; btn.textContent = "作成中…";
     try {
-      const dl = await claude.use("downloads");
-      if (!dl) { toast("この画面ではPDFを保存できません。Claudeアプリまたはブラウザで開き直してください。"); return; }
+      const dl = await cap("downloads");
       const pages = layout(st);
       const bytes = await buildPdf(pages, st);
       const nm = (st.orderer.name || "発注者").replace(/[\\/:*?"<>|\s]+/g, "");
-      await dl.save({ filename: "除雪等業務委託契約書_" + nm + ".pdf", data: bytes });
+      const filename = "除雪等業務委託契約書_" + nm + ".pdf";
+      if (dl) await dl.save({ filename, data: bytes });
+      else {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+        a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      }
       toast("PDFを保存しました");
     } catch (e) {
       if (e && e.code === "declined") toast("保存をキャンセルしました");
@@ -791,9 +799,9 @@ const FONT_BOLD_B64 = "__FONT_BOLD__";
   }
   async function initServer() {
     try {
-      db = await claude.use("db");
+      db = await cap("db");
       if (!db) return;
-      try { const u = await claude.use("user"); if (u && u.can && (await u.can("data.write")) === false) canWrite = false; } catch (e) {}
+      try { const u = await cap("user"); if (u && u.can && (await u.can("data.write")) === false) canWrite = false; } catch (e) {}
       $("savedSec").hidden = false;
       if (canWrite) { $("saveSrv").hidden = false; } else { $("newDoc").hidden = true; $("saveCopy").hidden = true; }
       db.collection("contracts").orderBy("updatedAt", "desc").limit(200).onSnapshot((snap) => {

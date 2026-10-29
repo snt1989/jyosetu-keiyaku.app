@@ -9,9 +9,9 @@
 
 ## 動作環境
 
-`index.html` は claude.ai のアーティファクトとして動かす前提です。PDFの保存（`downloads`）とサーバー保存（`db`）は、
-claude.ai が提供する `window.claude` のAPIを使っています。それ以外の場所（GitHub Pagesなど）で開くと、
-入力とプレビューは動きますが、PDF保存とサーバー保存は使えません。
+- **claude.ai のアーティファクト**: PDFの保存とサーバー保存（`window.claude` の `downloads` / `db`）を使います。
+- **Vercel・GitHub Pagesなど一般のWeb**: 入力・プレビュー・PDF保存（ブラウザの標準ダウンロード）は動きます。
+  サーバー保存は保存先がないため、「保存した契約書」欄は表示されません。入力内容はそのブラウザにだけ自動保存されます。
 
 ## 構成
 
