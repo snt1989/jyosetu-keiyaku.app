@@ -115,6 +115,7 @@ textarea { resize: vertical; line-height: 1.55; }
   <div class="top-in">
     <div class="brand"><h1>除雪契約書メーカー</h1><p>入力するとA4の契約書がその場で組み上がります</p></div>
     <button class="btn" id="saveSrv" type="button" hidden>サーバーに保存</button>
+    <button class="btn" id="logout" type="button" hidden>ログアウト</button>
     <button class="btn primary" id="save" type="button">PDFを保存</button>
   </div>
   <div class="tabs" id="tabs">
@@ -268,8 +269,10 @@ const FONT_BOLD_B64 = "";
   const cwCache = new Map();
 
   async function initFonts() {
-    regBytes = b64ToBytes(FONT_REG_B64);
-    boldBytes = b64ToBytes(FONT_BOLD_B64);
+    // claude.ai ではフォントをページに埋め込み、単体のWebでは window.__FONT_URLS から読み込む
+    const load = async (b64, url) => b64 ? b64ToBytes(b64) : new Uint8Array(await (await fetch(url)).arrayBuffer());
+    const urls = window.__FONT_URLS || {};
+    [regBytes, boldBytes] = await Promise.all([load(FONT_REG_B64, urls.reg), load(FONT_BOLD_B64, urls.bold)]);
     const md = await PDFDocument.create();
     md.registerFontkit(fontkit);
     mReg = await md.embedFont(regBytes, { subset: true });
@@ -847,6 +850,7 @@ const FONT_BOLD_B64 = "";
     const subs = []; let timer = null;
     const api = async (method, id, body) => {
       const r = await fetch("/api/contracts" + (id ? "?id=" + encodeURIComponent(id) : ""), { method, cache: "no-store", headers: body ? { "content-type": "application/json" } : undefined, body: body ? JSON.stringify(body) : undefined });
+      if (r.status === 401) { location.reload(); }
       if (!r.ok) { const e = new Error("サーバーの応答エラー (" + r.status + ")"); e.status = r.status; throw e; }
       return r.status === 204 ? null : r.json();
     };
@@ -870,6 +874,8 @@ const FONT_BOLD_B64 = "";
         const h = httpStore();
         try { await h.probe(); } catch (e) { return; }
         store = h;
+        $("logout").hidden = false;
+        $("logout").onclick = async () => { try { await fetch("/api/auth", { method: "DELETE" }); } catch (e) {} location.reload(); };
       }
       $("savedSec").hidden = false;
       if (canWrite) { $("saveSrv").hidden = false; } else { $("newDoc").hidden = true; $("saveCopy").hidden = true; }
