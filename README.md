@@ -33,6 +33,14 @@
 | `tools/mkfont_regular.py`, `tools/mkfont_bold.py` | Noto Serif CJK JP からJIS X 0208範囲を切り出してTTF化 |
 | `tools/build.py` | ソースにフォントを埋め込んで `index.html` を作成 |
 
+## データ読み取り
+
+「契約書から読み取り」で Word(.docx)・PDF・写真/スキャン画像を選ぶと、内容を解析して入力欄に反映します（反映前に確認画面が出ます）。
+
+- Word/PDF は文字を直接抽出します。画像と文字のないPDFは OCR（Tesseract.js）で読み取ります。
+- OCR は誤読が出ることがあります。反映後に必ず内容を確認してください。
+- 読み取りライブラリは jsDelivr から読み込みます（初回OCRは日本語辞書 約2MB をダウンロード）。
+
 ## ビルド
 
 ```

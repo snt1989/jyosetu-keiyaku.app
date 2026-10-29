@@ -87,6 +87,13 @@ textarea { resize: vertical; line-height: 1.55; }
 .viewer-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding-block: 10px; padding-top: calc(10px + env(safe-area-inset-top, 0px)); border-bottom: 1px solid var(--line); }
 .viewer-bar h2 { margin: 0 auto 0 0; font-size: 15px; min-width: 0; overflow-wrap: anywhere; }
 .viewer-body { flex: 1; overflow: auto; padding-block: 16px calc(24px + env(safe-area-inset-bottom, 0px)); }
+.imp { max-width: 720px; margin: 0 auto; }
+.imp-row { display: grid; grid-template-columns: 8.5em minmax(0, 1fr); gap: 4px 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.imp-row b { font-weight: 700; font-size: 13px; }
+.imp-row span { white-space: pre-wrap; overflow-wrap: anywhere; }
+.imp-row.none span { color: var(--muted); }
+#impFile { width: 100%; font-size: 13px; }
+@media (max-width: 480px) { .imp-row { grid-template-columns: minmax(0, 1fr); } }
 .preview { min-width: 0; }
 .pages { display: flex; flex-direction: column; gap: 18px; align-items: center; }
 .pages svg { width: 100%; max-width: 720px; height: auto; background: #fff; box-shadow: var(--shadow); display: block; }
@@ -108,7 +115,6 @@ textarea { resize: vertical; line-height: 1.55; }
   <div class="top-in">
     <div class="brand"><h1>除雪契約書メーカー</h1><p>入力するとA4の契約書がその場で組み上がります</p></div>
     <button class="btn" id="saveSrv" type="button" hidden>サーバーに保存</button>
-    <button class="btn" id="logout" type="button" hidden>ログアウト</button>
     <button class="btn primary" id="save" type="button">PDFを保存</button>
   </div>
   <div class="tabs" id="tabs">
@@ -124,6 +130,13 @@ textarea { resize: vertical; line-height: 1.55; }
       <p class="hint" id="curState"></p>
       <div class="row-btns"><button class="btn small" id="newDoc" type="button">新規作成</button><button class="btn small" id="saveCopy" type="button">コピーとして保存</button></div>
       <div id="saved"></div>
+    </section>
+
+    <section class="sec" id="importSec">
+      <h2>契約書から読み取り</h2>
+      <p class="hint">前年の契約書（Word・PDF）や、紙をスキャンした画像（JPG・PNG）を選ぶと、発注者・期間・条文・現場・単価表を読み取って入力欄に入れます。反映する前に内容を確認できます。</p>
+      <input type="file" id="impFile" accept=".docx,.pdf,image/*">
+      <p class="hint" id="impMsg" role="status" style="margin:8px 0 0"></p>
     </section>
 
     <section class="sec">
@@ -193,6 +206,14 @@ textarea { resize: vertical; line-height: 1.55; }
   </div>
   <div class="viewer-body wrap"><div class="pages" id="vPages"></div></div>
 </div>
+<div class="viewer" id="impDlg" hidden role="dialog" aria-modal="true" aria-label="読み取り結果の確認">
+  <div class="viewer-bar wrap">
+    <h2>読み取り結果の確認</h2>
+    <button class="btn" id="impCancel" type="button">キャンセル</button>
+    <button class="btn primary" id="impApply" type="button">入力欄に反映</button>
+  </div>
+  <div class="viewer-body wrap"><div class="imp" id="impBody"></div></div>
+</div>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -247,10 +268,8 @@ const FONT_BOLD_B64 = "";
   const cwCache = new Map();
 
   async function initFonts() {
-    // claude.ai ではフォントをページに埋め込み、単体のWebでは window.__FONT_URLS から読み込む
-    const load = async (b64, url) => b64 ? b64ToBytes(b64) : new Uint8Array(await (await fetch(url)).arrayBuffer());
-    const urls = window.__FONT_URLS || {};
-    [regBytes, boldBytes] = await Promise.all([load(FONT_REG_B64, urls.reg), load(FONT_BOLD_B64, urls.bold)]);
+    regBytes = b64ToBytes(FONT_REG_B64);
+    boldBytes = b64ToBytes(FONT_BOLD_B64);
     const md = await PDFDocument.create();
     md.registerFontkit(fontkit);
     mReg = await md.embedFont(regBytes, { subset: true });
@@ -828,7 +847,6 @@ const FONT_BOLD_B64 = "";
     const subs = []; let timer = null;
     const api = async (method, id, body) => {
       const r = await fetch("/api/contracts" + (id ? "?id=" + encodeURIComponent(id) : ""), { method, cache: "no-store", headers: body ? { "content-type": "application/json" } : undefined, body: body ? JSON.stringify(body) : undefined });
-      if (r.status === 401) { location.reload(); }
       if (!r.ok) { const e = new Error("サーバーの応答エラー (" + r.status + ")"); e.status = r.status; throw e; }
       return r.status === 204 ? null : r.json();
     };
@@ -852,13 +870,358 @@ const FONT_BOLD_B64 = "";
         const h = httpStore();
         try { await h.probe(); } catch (e) { return; }
         store = h;
-        $("logout").hidden = false;
-        $("logout").onclick = async () => { try { await fetch("/api/auth", { method: "DELETE" }); } catch (e) {} location.reload(); };
       }
       $("savedSec").hidden = false;
       if (canWrite) { $("saveSrv").hidden = false; } else { $("newDoc").hidden = true; $("saveCopy").hidden = true; }
       store.subscribe((items) => { savedList = items; renderSaved(); }, () => { $("saved").innerHTML = '<p class="empty">保存済みの一覧を読み込めませんでした。</p>'; });
     } catch (e) { store = null; }
+  }
+
+  /* ---------- データ読み取り（Word / PDF / 画像OCR） ---------- */
+  const LIBS = {
+    jszip: "https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js",
+    pdfjs: "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js",
+    pdfworker: "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js",
+    tess: "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js",
+    lang: "https://cdn.jsdelivr.net/npm/@tesseract.js-data/jpn@1.0.0/4.0.0_best_int"
+  };
+  const loadedLibs = {};
+  const loadScript = (u) => loadedLibs[u] || (loadedLibs[u] = new Promise((res, rej) => {
+    const s = document.createElement("script"); s.src = u; s.onload = res;
+    s.onerror = () => { delete loadedLibs[u]; rej(new Error("読み取り用のライブラリを読み込めませんでした。通信状況を確認してください。")); };
+    document.head.appendChild(s);
+  }));
+
+  const WNS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+  async function readDocx(buf) {
+    await loadScript(LIBS.jszip);
+    const zip = await JSZip.loadAsync(buf);
+    const f = zip.file("word/document.xml");
+    if (!f) throw new Error("Wordファイルの中身を読めませんでした。");
+    const doc = new DOMParser().parseFromString(await f.async("string"), "application/xml");
+    const lname = (n) => n.localName;
+    const ptext = (p) => {
+      let s = "";
+      const walk = (n) => {
+        for (const c of n.childNodes) {
+          if (c.nodeType !== 1) continue;
+          const nm = lname(c);
+          if (nm === "t") s += c.textContent;
+          else if (nm === "tab") s += "　";
+          else if (nm === "br" || nm === "cr") s += "\n";
+          else if (nm === "pPr" || nm === "rPr") continue;
+          else walk(c);
+        }
+      };
+      walk(p);
+      return s;
+    };
+    const lines = [], tables = [];
+    const handleTable = (tbl) => {
+      const rows = [];
+      for (const tr of tbl.childNodes) {
+        if (tr.nodeType !== 1 || lname(tr) !== "tr") continue;
+        const cells = [];
+        for (const tc of tr.childNodes) {
+          if (tc.nodeType !== 1 || lname(tc) !== "tc") continue;
+          const paras = [];
+          for (const p of tc.childNodes) if (p.nodeType === 1 && lname(p) === "p") paras.push(ptext(p));
+          cells.push(paras.join("\n").trim());
+        }
+        rows.push(cells);
+        const first = cells.map((c) => c.split("\n")[0]);
+        lines.push(first.join("\t"));
+        cells.forEach((c) => c.split("\n").slice(1).forEach((x) => lines.push(x)));
+      }
+      tables.push(rows);
+    };
+    const walkBody = (n) => {
+      for (const c of n.childNodes) {
+        if (c.nodeType !== 1) continue;
+        const nm = lname(c);
+        if (nm === "p") ptext(c).split("\n").forEach((x) => lines.push(x));
+        else if (nm === "tbl") handleTable(c);
+        else if (nm === "sectPr") continue;
+        else walkBody(c);
+      }
+    };
+    walkBody(doc.getElementsByTagNameNS(WNS, "body")[0]);
+    return { lines, tables, kind: "docx" };
+  }
+
+  async function readPdf(buf, setMsg) {
+    await loadScript(LIBS.pdfjs);
+    pdfjsLib.GlobalWorkerOptions.workerSrc = LIBS.pdfworker;
+    const pdf = await pdfjsLib.getDocument({ data: buf.slice(0) }).promise;
+    const lines = [];
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const tc = await (await pdf.getPage(i)).getTextContent();
+      const rows = [];
+      tc.items.forEach((it) => {
+        if (!it.str) return;
+        const y = it.transform[5], x = it.transform[4], h = Math.abs(it.transform[3]) || 10;
+        let r = rows.find((r) => Math.abs(r.y - y) < h * 0.5);
+        if (!r) { r = { y, items: [] }; rows.push(r); }
+        r.items.push({ x, w: it.width, s: it.str, h });
+      });
+      rows.sort((a, b) => b.y - a.y).forEach((r) => {
+        r.items.sort((a, b) => a.x - b.x);
+        let s = "", end = null;
+        r.items.forEach((it) => {
+          if (end !== null) { const gap = it.x - end; s += gap > it.h * 2.2 ? "\t" : gap > it.h * 0.4 ? " " : ""; }
+          s += it.s; end = it.x + it.w;
+        });
+        lines.push(s);
+      });
+    }
+    const chars = lines.join("").replace(/\s/g, "").length;
+    if (chars >= 40) return { lines, tables: [], kind: "pdf" };
+    // 文字が取れない（スキャンのPDF）ときは画像にしてOCR
+    const texts = [];
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const vp = page.getViewport({ scale: 2.4 });
+      const cv = document.createElement("canvas"); cv.width = vp.width; cv.height = vp.height;
+      await page.render({ canvasContext: cv.getContext("2d"), viewport: vp }).promise;
+      texts.push(await ocr(cv, (m) => setMsg("ページ " + i + "/" + pdf.numPages + "　" + m)));
+    }
+    return { lines: texts.join("\n").split("\n"), tables: [], kind: "ocr" };
+  }
+
+  let ocrWorker = null;
+  async function ocr(canvas, setMsg) {
+    await loadScript(LIBS.tess);
+    if (!ocrWorker) {
+      setMsg("日本語の辞書を読み込み中…（初回のみ時間がかかります）");
+      ocrWorker = await Tesseract.createWorker("jpn", 1, {
+        langPath: LIBS.lang,
+        logger: (m) => {
+          if (m.status === "recognizing text") setMsg("文字を読み取り中… " + Math.round(m.progress * 100) + "%");
+          else if (/loading/.test(m.status || "")) setMsg("日本語の辞書を読み込み中… " + Math.round((m.progress || 0) * 100) + "%");
+        }
+      });
+    }
+    await ocrWorker.setParameters({ tessedit_pageseg_mode: String(window.__PSM || "4"), preserve_interword_spaces: "1" });
+    const r = await ocrWorker.recognize(canvas);
+    // 日本語の文字の前後に入る余計な空白を除く
+    return r.data.text.replace(/(?<=[\u3001-\u9fff\uff00-\uffef])[ \t]+|[ \t]+(?=[\u3001-\u9fff\uff00-\uffef])/g, "");
+  }
+
+  async function readImage(file, setMsg) {
+    const url = URL.createObjectURL(file);
+    try {
+      const im = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error("画像を読み込めませんでした。")); i.src = url; });
+      const k = Math.min(1, 2800 / Math.max(im.naturalWidth, im.naturalHeight));
+      const cv = document.createElement("canvas"); cv.width = Math.round(im.naturalWidth * k); cv.height = Math.round(im.naturalHeight * k);
+      const g = cv.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, cv.width, cv.height); g.drawImage(im, 0, 0, cv.width, cv.height);
+      return { lines: (await ocr(cv, setMsg)).split("\n"), tables: [], kind: "ocr" };
+    } finally { URL.revokeObjectURL(url); }
+  }
+
+  /* --- 文字から項目を拾う --- */
+  const toAscii = (s) => s.replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0)).replace(/[\t ]/g, " ");
+  const ERA = { 令和: 2018, 平成: 1988, 昭和: 1925, 西暦: 0, "": 0 };
+  const eraYear = (era, y) => { const n = y === "元" ? 1 : +y; return (era ? ERA[era] : n < 200 ? 2018 : 0) + n; };
+  const iso = (y, m, d) => y + "-" + String(m).padStart(2, "0") + "-" + String(d).padStart(2, "0");
+  const CLAUSES = { 業務の名称: "job", 業務範囲: "scope", 契約期間: "period", 委託金額: "amount", 支払条件: "pay", 損害賠償: "damage", 契約解除: "cancel", 特約事項: "special" };
+  const HEAD = /^\s*([1-8]\s*[.．、)）]?\s*)?(業務の名称|業務範囲|契約期間|委託金額|支払条件|損害賠償|契約解除|特約事項)(.*)$/;
+  const unify = (s) => s.replace(/注文者/g, "発注者").replace(/受注者/g, "請負者");
+  const cleanVal = (s) => s.replace(/^[\s　:：”"'’‘“]+|[\s　]+$/g, "");
+
+  function parseContract(src) {
+    const PAGE = /^\s*[-－ー_]?\s*\d{1,4}\s*(?:\/\s*\d{1,3}\s*)?[-－ー_]?\s*$/;
+    const raw = src.lines.map((l) => l.replace(/\r/g, "")).filter((l) => !PAGE.test(l));
+    const norm = raw.map(toAscii);
+    const out = { sites: [], prices: [], warnings: [] };
+    const isOcr = src.kind === "ocr";
+    const BESSHI = /^\s*(?:[【\[「(（]\s*別紙|別紙\s*\d*\s*[】\]」)）]?\s*$)/, BETSU = /^\s*(?:[【\[「(（]\s*別表|別表\s*\d*\s*[】\]」)）]?\s*$)/;
+    const iBesshi = norm.findIndex((l) => BESSHI.test(l));
+    const iBetsu = norm.findIndex((l) => BETSU.test(l));
+    const mainEnd = [iBesshi, iBetsu].filter((i) => i >= 0).reduce((a, b) => Math.min(a, b), raw.length);
+
+    // 条項
+    const isSigStart = (l) => /^\s*(注文者|発注者|請負者|受注者)\s*$/.test(l);
+    const body = {}; let cur = null, sigStart = -1;
+    for (let i = 0; i < mainEnd; i++) {
+      const l = norm[i];
+      let h = HEAD.exec(l);
+      // 番号が無いときは、見出しの直後が区切り（空白・コロン・行末）のときだけ見出しとみなす（「契約期間前までに…」のような本文を除く）
+      if (h && !h[1] && !/^(?:[\s　:：]|$)/.test(h[3])) h = null;
+      if (h) { cur = CLAUSES[h[2]]; body[cur] = []; const rest = raw[i].slice(raw[i].length - h[3].length); if (cleanVal(rest)) body[cur].push(cleanVal(rest)); continue; }
+      if (isSigStart(l)) { if (sigStart < 0) sigStart = i; cur = null; continue; }
+      if (/^\s*以上\s*$/.test(l)) { cur = null; continue; }
+      if (cur && cleanVal(raw[i])) body[cur].push(cleanVal(raw[i]));
+    }
+    // OCR・PDFは折り返しで文が切れるので、句点で終わらない行は次の行とつなぐ
+    const paras = (arr) => {
+      if (src.kind === "docx") return arr;
+      const o = [];
+      arr.forEach((l) => { if (o.length && !/[。）」]$/.test(o[o.length - 1])) o[o.length - 1] += l; else o.push(l); });
+      return o;
+    };
+    Object.keys(body).forEach((k) => { body[k] = paras(body[k]).map(unify); });
+    if (body.job && body.job[0]) out.job = body.job[0];
+    ["scope", "amount", "pay", "damage", "cancel", "special"].forEach((k) => { if (body[k] && body[k].length) out[k] = body[k].join("\n"); });
+
+    // 契約期間
+    const ptxt = toAscii((body.period || []).join(" ") || norm.slice(0, mainEnd).join(" "));
+    const m = /(令和|平成|昭和|西暦)?\s*(元|\d+)\s*年\s*(\d+)\s*月\s*(\d+)\s*日\s*(?:から|～|~|-|ー)\s*(令和|平成|昭和|西暦)?\s*(元|\d+)\s*年\s*(\d+)\s*月\s*(\d+)\s*日/.exec(ptxt);
+    if (m) {
+      out.start = iso(eraYear(m[1] || "", m[2]), m[3], m[4]);
+      out.end = iso(eraYear(m[5] || m[1] || "", m[6]), m[7], m[8]);
+      if (out.end < out.start) out.warnings.push("契約終了日が開始日より前になっています（元の書類の誤りかもしれません）。反映後に日付を直してください。");
+    }
+    if (body.period) out.renewal = /再契約/.test(body.period.join(""));
+
+    // 当事者
+    const head = norm.slice(0, Math.max(mainEnd, 0)).join(" ");
+    const pm = /(?:発注者|注文者)\s*(.*?)\s*と[、,]\s*(?:請負者|受注者)\s*(.*?)\s*とは/.exec(head);
+    const pickBlock = (names, from, to) => {
+      const r = {};
+      for (let i = from; i < to; i++) {
+        const l = norm[i]; let mm;
+        if ((mm = /^\s*(?:住\s*所|所\s*在\s*地)\s*[:：]?\s*(.*)$/.exec(l))) r.address = cleanVal(raw[i].slice(raw[i].length - mm[1].length));
+        else if ((mm = /^\s*(?:会\s*社\s*名|名\s*称)\s*[:：]?\s*(.*)$/.exec(l))) r.name = cleanVal(raw[i].slice(raw[i].length - mm[1].length));
+        else if ((mm = /^\s*氏\s*名\s*[:：]?\s*(.*)$/.exec(l))) r.rep = cleanVal(raw[i].slice(raw[i].length - mm[1].length)).replace(/[\s　]*印$/, "");
+      }
+      return r;
+    };
+    const find = (re, from) => { for (let i = from; i < mainEnd; i++) if (re.test(norm[i])) return i; return -1; };
+    const oi = find(/^\s*(注文者|発注者)\s*$/, 0), ci = find(/^\s*(請負者|受注者)\s*$/, 0);
+    const oEnd = ci > oi ? ci : mainEnd, cEnd = oi > ci && oi >= 0 ? oi : mainEnd;
+    const ob = oi >= 0 ? pickBlock(norm, oi + 1, oEnd) : {}, cb = ci >= 0 ? pickBlock(norm, ci + 1, cEnd) : {};
+    const orderer = { name: ob.name || (pm && cleanVal(pm[1])) || "", address: ob.address || "", rep: ob.rep || "" };
+    const contractor = { name: cb.name || (pm && cleanVal(pm[2])) || "", address: cb.address || "", rep: cb.rep || "" };
+    if (orderer.name || orderer.address || orderer.rep) out.orderer = orderer;
+    if (contractor.name || contractor.address || contractor.rep) out.contractor = contractor;
+
+    // 別紙（現場）
+    const besshiIdx = [];
+    norm.forEach((l, i) => { if (BESSHI.test(l)) besshiIdx.push(i); });
+    besshiIdx.forEach((start, bi) => {
+      const end = Math.min(...[besshiIdx[bi + 1], iBetsu > start ? iBetsu : undefined, raw.length].filter((x) => x !== undefined));
+      const LAB = /^\s*(現場名|住所|平米数|面積|地図|出動条件|引渡時間|特記事項)\s*(.*)$/;
+      const f = {}; let label = null;
+      for (let i = start + 1; i < end; i++) {
+        const mm = LAB.exec(norm[i]);
+        if (mm) { label = mm[1]; f[label] = f[label] || []; const v = cleanVal(raw[i].slice(raw[i].length - mm[2].length)); if (v) f[label].push(v); }
+        else if (label && label !== "地図" && cleanVal(raw[i])) f[label].push(cleanVal(raw[i]));
+      }
+      // 表のラベルが縦中央にあるPDF・画像では、最初の「・」「※」の行がラベルより上に出るので、次のラベルへ戻す
+      const order = []; norm.slice(start + 1, end).forEach((l) => { const mm = LAB.exec(l); if (mm) order.push(mm[1]); });
+      order.forEach((k, idx) => {
+        const nxt = order[idx + 1];
+        if ((nxt === "出動条件" || nxt === "特記事項") && k !== "出動条件" && k !== "特記事項" && k !== "地図" && f[k]) {
+          const moved = [];
+          while (f[k].length > 1 && /^[・･●○◯※*＊]/.test(f[k][f[k].length - 1])) moved.unshift(f[k].pop());
+          if (moved.length) f[nxt] = moved.concat(f[nxt] || []);
+        }
+      });
+      const g = (k) => (f[k] || []).join("\n");
+      const areaM = /([\d,]+(?:\.\d+)?)/.exec(toAscii(g("平米数") || g("面積")));
+      if (f["現場名"] || f["住所"]) out.sites.push({
+        name: (f["現場名"] || [""])[0], address: (f["住所"] || []).join(""), area: areaM ? areaM[1].replace(/,/g, "").replace(/^(\d{1,3})\.(\d{3})$/, "$1$2") : "",
+        map: "", mapW: 0, mapH: 0, dispatch: g("出動条件"), handover: (f["引渡時間"] || []).join(""), note: g("特記事項")
+      });
+    });
+
+    // 別表1（単価表）
+    const priceNum = (s) => { const x = toAscii(s).replace(/[^\d.,]/g, "").replace(/,/g, ""); return x; };
+    let tbl = null;
+    for (const t of src.tables) { if (t.length > 1 && /業務名/.test(t[0].join("")) && /単価/.test(t[0].join(""))) { tbl = t; break; } }
+    if (tbl) {
+      tbl.slice(1).forEach((r) => {
+        if (r.length >= 4 && (r[1] || r[3])) out.prices.push({ task: r[0] || "", spec: r[1] || "", unit: r[2] || "", price: priceNum(r[3] || "") });
+      });
+    } else if (iBetsu >= 0) {
+      const UNIT = /^(式|回|台|日|時間|㎡|m2|ｍ２|枚|箇所|ヶ所|本|月|人|kg|袋|基|km|時|件|t)$/;
+      let pending = [];
+      for (let i = iBetsu + 1; i < raw.length; i++) {
+        const l = cleanVal(raw[i]);
+        if (!l || /^(業務名|仕様|単位|単価)/.test(l.replace(/[\s　]/g, ""))) continue;
+        let toks = toAscii(l).split(/\t| {2,}/).map((x) => x.trim()).filter(Boolean);
+        if (toks.length < 3) toks = toAscii(l).split(/\s+/).filter(Boolean);
+        const last = toks[toks.length - 1] || "", unit = toks[toks.length - 2] || "";
+        const glued = toks.length < 3 || !(/^[\d,]+円?$/.test(last) && UNIT.test(unit)) ? /^(.*?)(式|回|台|日|時間|㎡|枚|箇所|ヶ所|本|人|基|件)\s*([\d,]{2,})\s*円?$/.exec(toAscii(l).replace(/\s+/g, " ")) : null;
+        if (glued && !(toks.length >= 2 && /^[\d,]+円?$/.test(last) && UNIT.test(unit))) { toks = [glued[1].trim(), glued[2], glued[3]].filter((x, i) => i > 0 || x); }
+        const last2 = toks[toks.length - 1] || "", unit2 = toks[toks.length - 2] || "";
+        if (toks.length >= 2 && /^[\d,]+円?$/.test(last2) && UNIT.test(unit2)) {
+          const before = toks.slice(0, -2); let task = "", spec = before;
+          const last = last2, unit = unit2;
+          if (before.length >= 2 && (pending.length || out.prices.length === 0 || before[0].length <= 6) && !/[（(※]/.test(before[0])) { task = before[0]; spec = before.slice(1); }
+          else if (before.length === 1 && pending.length && before[0].length <= 6 && !/[（(※）)]/.test(before[0])) { task = before[0]; spec = []; }
+          out.prices.push({ task, spec: pending.concat([spec.join(" ")]).filter(Boolean).join("\n"), unit, price: priceNum(last) });
+          pending = [];
+        } else if (/^[※*＊]/.test(l) && out.prices.length && !pending.length) {
+          out.prices[out.prices.length - 1].spec += "\n" + l;
+        } else pending.push(l);
+      }
+    }
+    out.prices = out.prices.filter((p) => p.spec || p.price);
+    if (isOcr) out.warnings.push("画像から文字を読み取っています。誤読が含まれることがあるため、反映後に必ず内容を確認してください。");
+    return out;
+  }
+
+  /* --- 読み取り結果の確認 → 反映 --- */
+  let pending = null;
+  const showText = (v) => String(v).split("\n").map((x) => x || " ").join("\n");
+  function showImportResult(r) {
+    const rows = [];
+    const add = (label, v) => rows.push([label, v]);
+    add("発注者", r.orderer ? [r.orderer.name, r.orderer.address, r.orderer.rep].filter(Boolean).join("\n") : null);
+    add("請負者", r.contractor ? [r.contractor.name, r.contractor.address, r.contractor.rep].filter(Boolean).join("\n") : null);
+    add("業務の名称", r.job);
+    add("契約期間", r.start ? (reiwa(r.start).text + " から " + reiwa(r.end).text) + (r.renewal ? "\n再契約の文あり" : "\n再契約の文なし") : null);
+    [["業務範囲", "scope"], ["委託金額", "amount"], ["支払条件", "pay"], ["損害賠償", "damage"], ["契約解除", "cancel"], ["特約事項", "special"]].forEach(([l, k]) => add(l, r[k]));
+    r.sites.forEach((s, i) => add("別紙 現場" + (r.sites.length > 1 ? i + 1 : ""), [s.name, s.address, s.area ? s.area + "㎡" : "", "出動条件：" + s.dispatch, "引渡時間：" + s.handover, "特記事項：" + s.note].filter((x) => x && !/：$/.test(x)).join("\n")));
+    if (!r.sites.length) add("別紙 現場", null);
+    add("別表1 単価表", r.prices.length ? r.prices.map((p) => [p.task, p.spec.replace(/\n/g, " "), p.unit, p.price ? Number(p.price).toLocaleString("ja-JP") + "円" : ""].filter(Boolean).join("　")).join("\n") : null);
+    const found = rows.filter((x) => x[1]).length;
+    const box = $("impBody"); box.innerHTML = "";
+    const intro = document.createElement("p"); intro.className = "hint";
+    intro.textContent = found ? "読み取れた項目です。「入力欄に反映」を押すと、現在の入力内容のうち読み取れた項目だけが置き換わります（保存済みの契約書は変わりません）。" : "契約書の項目を読み取れませんでした。ひな形に近い形式のWord・PDF、または文字がはっきり写った画像を選んでください。";
+    box.appendChild(intro);
+    r.warnings.forEach((w) => { const p = document.createElement("p"); p.className = "warn"; p.textContent = w; box.appendChild(p); });
+    rows.forEach(([l, v]) => {
+      const d = document.createElement("div"); d.className = "imp-row" + (v ? "" : " none");
+      const a = document.createElement("b"); a.textContent = l;
+      const b = document.createElement("span"); b.textContent = v ? showText(v) : "読み取れませんでした（現在の入力を残します）";
+      d.appendChild(a); d.appendChild(b); box.appendChild(d);
+    });
+    $("impApply").hidden = !found;
+    pending = r; $("impDlg").hidden = false; $("impDlg").querySelector(".viewer-body").scrollTop = 0; $("impCancel").focus();
+  }
+  function applyImport() {
+    const r = pending; if (!r) return;
+    ["job", "scope", "amount", "pay", "damage", "cancel", "special", "start", "end"].forEach((k) => { if (r[k]) S[k] = r[k]; });
+    if (r.renewal !== undefined) S.renewal = r.renewal;
+    if (r.orderer) S.orderer = Object.assign({ name: "", address: "", rep: "" }, r.orderer);
+    if (r.contractor) S.contractor = Object.assign({ name: "", address: "", rep: "" }, r.contractor);
+    if (r.sites.length) S.sites = r.sites;
+    if (r.prices.length) S.prices = r.prices;
+    delete S._id; dirty = true; persist(); refillForm(); refresh(); renderSaved();
+    $("impDlg").hidden = true; pending = null;
+    toast("読み取った内容を入力欄に反映しました。内容を確認してください。");
+    document.body.dataset.view = "form";
+  }
+  async function onImportFile(file) {
+    const msg = $("impMsg"), inp = $("impFile");
+    const setMsg = (t) => { msg.textContent = t; };
+    if (!file) return;
+    inp.disabled = true;
+    try {
+      const name = file.name.toLowerCase();
+      let src;
+      if (/\.docx$/.test(name)) { setMsg("Wordを読み取り中…"); src = await readDocx(await file.arrayBuffer()); }
+      else if (/\.pdf$/.test(name) || file.type === "application/pdf") { setMsg("PDFを読み取り中…"); src = await readPdf(await file.arrayBuffer(), setMsg); }
+      else if (/^image\//.test(file.type) || /\.(png|jpe?g|webp|bmp|gif)$/.test(name)) { src = await readImage(file, setMsg); }
+      else if (/\.doc$/.test(name)) throw new Error("古い形式（.doc）は読み取れません。Wordで「.docx」として保存し直してください。");
+      else throw new Error("読み取れるのは、Word（.docx）、PDF、画像（JPG・PNG）です。");
+      setMsg(""); window.__impSrc = src;
+      showImportResult(parseContract(src));
+    } catch (e) {
+      setMsg("読み取れませんでした：" + ((e && e.message) || e));
+    } finally { inp.disabled = false; inp.value = ""; }
   }
 
   document.addEventListener("DOMContentLoaded", init);
@@ -870,10 +1233,13 @@ const FONT_BOLD_B64 = "";
     $("addSite").onclick = () => { S.sites.push({ name: "", address: "", area: "", map: "", mapW: 0, mapH: 0, dispatch: "・積雪量10センチにて自動出動\n・前日21:00までに電話等にて連絡\n※別途変更は可能", handover: "当日7:00まで（積雪状況により変動する場合あり）", note: "" }); renderSites(); schedule(); };
     $("addPrice").onclick = () => { S.prices.push({ task: "", spec: "", unit: "", price: "" }); renderPrices(); schedule(); };
     $("save").onclick = () => savePdf();
+    $("impFile").addEventListener("change", (e) => onImportFile(e.target.files[0]));
+    $("impApply").onclick = applyImport;
+    $("impCancel").onclick = () => { $("impDlg").hidden = true; pending = null; };
     $("vClose").onclick = closeViewer;
     $("vPdf").onclick = () => viewing && savePdf(viewing, $("vPdf"));
     $("vEdit").onclick = () => { const id = viewing && viewing._id; closeViewer(); if (id) openDoc(id); };
-    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("viewer").hidden) closeViewer(); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") { if (!$("impDlg").hidden) { $("impDlg").hidden = true; pending = null; } else if (!$("viewer").hidden) closeViewer(); } });
     $("newDoc").onclick = newDoc;
     $("saveSrv").onclick = () => saveToServer(false);
     $("saveCopy").onclick = () => saveToServer(true);
