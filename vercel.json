@@ -1,0 +1,11 @@
+{
+  "outputDirectory": "public",
+  "regions": ["hnd1"],
+  "functions": {
+    "api/app.js": { "includeFiles": "private/app.html" }
+  },
+  "rewrites": [{ "source": "/", "destination": "/api/app" }],
+  "headers": [
+    { "source": "/fonts/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400" }] }
+  ]
+}

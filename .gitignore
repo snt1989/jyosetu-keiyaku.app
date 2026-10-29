@@ -1,4 +1,3 @@
-fonts/
-tmp.otf
 node_modules/
 .vercel/
+tmp.otf

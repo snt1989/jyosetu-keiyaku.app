@@ -10,18 +10,25 @@
 ## 動作環境
 
 - **claude.ai のアーティファクト**: PDFの保存とサーバー保存に `window.claude` の `downloads` / `db` を使います。
-- **Vercel**: PDFはブラウザの標準ダウンロードで保存します。サーバー保存は `api/contracts.js` が
-  Vercel Blob（非公開ストア）に JSON で保存します。ストアをプロジェクトに接続すると環境変数 `BLOB_READ_WRITE_TOKEN` が入ります。
-  APIに独自の認証はなく、公開範囲は Vercel の Deployment Protection（チームメンバーのみ）に任せています。
-  保護を外して公開する場合は、先に認証を追加してください。
+- **Vercel**: 共通パスワードでログインします。PDFはブラウザの標準ダウンロードで保存し、サーバー保存は `api/contracts.js` が
+  Vercel Blob（非公開ストア）に JSON で保存します。
+  - `/` は `api/app.js` が返します。ログイン済みなら本体（`private/app.html`）、未ログインならログイン画面です。
+  - Cookie（署名つき、7日間）を持たないAPI呼び出しは 401 になります。
+  - 環境変数 `APP_PASSWORD`（共通パスワード）と `SESSION_SECRET`（署名用の長いランダム文字列）が必要です。
+    パスワードを変えると、ログイン中の人は全員ログアウトされます。
+  - ストアをプロジェクトに接続すると `BLOB_READ_WRITE_TOKEN` が入ります。
+  - フォントは `public/fonts/` から読み込みます（関数の応答サイズ上限を避けるため）。
 - **API が無い環境**（GitHub Pages など）: 入力・プレビュー・PDF保存は動き、「保存した契約書」欄は出ません。
 
 ## 構成
 
 | パス | 内容 |
 |---|---|
-| `index.html` | フォントを埋め込んだ完成版（約4MB）。`tools/build.py` で作る |
+| `private/app.html` | Vercel用の本体。`tools/build.py` で作る（ログイン後にだけ配信） |
+| `api/app.js`, `api/auth.js`, `api/_auth.js` | ログイン画面・ログイン/ログアウト・セッション確認 |
 | `api/contracts.js` | 契約書の保存API（Vercel Blob） |
+| `public/fonts/` | PDF用の日本語フォント（Noto Serif CJK JP の部分セット） |
+| `vercel.json` | 出力先・東京リージョン・`/` の振り分け |
 | `src/app.src.html` | フォント部分をプレースホルダーにした編集用ソース |
 | `tools/mkfont_regular.py`, `tools/mkfont_bold.py` | Noto Serif CJK JP からJIS X 0208範囲を切り出してTTF化 |
 | `tools/build.py` | ソースにフォントを埋め込んで `index.html` を作成 |
@@ -29,9 +36,9 @@
 ## ビルド
 
 ```
-python3 tools/mkfont_regular.py /usr/share/fonts/opentype/noto/NotoSerifCJK-Regular.ttc 0 fonts/serif-regular.ttf
-python3 tools/mkfont_bold.py    /usr/share/fonts/opentype/noto/NotoSerifCJK-Bold.ttc    0 fonts/serif-bold.ttf
-python3 tools/build.py
+python3 tools/mkfont_regular.py /usr/share/fonts/opentype/noto/NotoSerifCJK-Regular.ttc 0 public/fonts/serif-regular.ttf   # フォントを作り直すとき
+python3 tools/mkfont_bold.py    /usr/share/fonts/opentype/noto/NotoSerifCJK-Bold.ttc    0 public/fonts/serif-bold.ttf
+python3 tools/build.py   # src/app.src.html を変えたとき
 ```
 
-`fonttools` が必要です。`fonts/` は生成物のためコミットしません。フォントは SIL Open Font License 1.1 の Noto Serif CJK JP を使用しています。
+フォント生成には `fonttools` が必要です。フォントは SIL Open Font License 1.1 の Noto Serif CJK JP を使用しています。

@@ -3,8 +3,9 @@
 //   GET    /api/contracts?id=ID    1件（メタ情報 + 入力内容）
 //   PUT    /api/contracts?id=ID    保存 { meta, state }
 //   DELETE /api/contracts?id=ID    削除
-// 公開範囲は Vercel の Deployment Protection（チームメンバーのみ）に任せる。
+// ログイン済み（共通パスワード）のセッションだけが使える。
 const { put, get, list, del } = require("@vercel/blob");
+const { isAuthed } = require("./_auth");
 
 const ID = /^c[a-z0-9]{3,40}$/;
 const META = (id) => "meta/" + id + ".json";
@@ -30,6 +31,7 @@ function cleanMeta(m) {
 
 module.exports = async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
+  if (!isAuthed(req)) return res.status(401).json({ error: "unauthorized" });
   try {
     const id = req.query && req.query.id;
     if (id !== undefined && !ID.test(String(id))) return res.status(400).json({ error: "invalid id" });

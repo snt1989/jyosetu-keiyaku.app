@@ -1,0 +1,891 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex"><style>body{margin:0}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style><script>window.__FONT_URLS={reg:"/fonts/serif-regular.ttf",bold:"/fonts/serif-bold.ttf"};</script>
+<title>除雪契約書メーカー</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+/* Layout: 左に入力フォーム、右にA4プレビュー。狭い画面では「入力 / プレビュー」を切り替える */
+:root {
+  --bg: #eaf0f4;
+  --panel: #ffffff;
+  --field: #f5f8fa;
+  --ink: #16212b;
+  --muted: #566878;
+  --line: #d3dce4;
+  --accent: #1d5d8a;
+  --accent-ink: #ffffff;
+  --warn: #a8480f;
+  --shadow: 0 1px 2px rgba(20,40,60,.10), 0 6px 20px rgba(20,40,60,.10);
+  --font-ui: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #10161c; --panel: #172029; --field: #1d2933; --ink: #e5ecf2; --muted: #92a3b2;
+    --line: #2b3945; --accent: #6bb4e6; --accent-ink: #07202f; --warn: #e5955c;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.35);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #10161c; --panel: #172029; --field: #1d2933; --ink: #e5ecf2; --muted: #92a3b2;
+  --line: #2b3945; --accent: #6bb4e6; --accent-ink: #07202f; --warn: #e5955c;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.35);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-ui); font-size: 14px; line-height: 1.6; }
+.wrap { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--bg); border-bottom: 1px solid var(--line); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--bg); }
+.top-in { display: flex; align-items: center; gap: 12px; padding-block: 10px; max-width: 1240px; margin: 0 auto; flex-wrap: wrap; }
+.brand { min-width: 0; margin-right: auto; }
+.brand h1 { font-size: 17px; margin: 0; font-weight: 700; letter-spacing: .04em; }
+.brand p { margin: 0; font-size: 12px; color: var(--muted); }
+button { font: inherit; color: inherit; cursor: pointer; }
+.btn { border: 1px solid var(--line); background: var(--panel); border-radius: 6px; padding: 7px 12px; min-height: 36px; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; padding-inline: 18px; }
+.btn.primary[disabled] { opacity: .55; cursor: progress; }
+.btn.small { padding: 3px 9px; min-height: 28px; font-size: 12px; }
+.btn.danger { color: var(--warn); }
+button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.tabs { display: none; max-width: 1240px; margin: 0 auto; padding-bottom: 8px; gap: 6px; }
+.tabs button { flex: 1; border: 1px solid var(--line); background: var(--panel); border-radius: 6px; padding: 6px; }
+.tabs button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; }
+
+main { display: grid; grid-template-columns: minmax(0, 460px) minmax(0, 1fr); gap: 24px; max-width: 1240px; margin: 0 auto; padding-block: 18px 48px; align-items: start; }
+.form { min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+.sec { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px 16px; }
+.sec > h2, details.sec > summary { font-size: 14px; margin: 0 0 10px; font-weight: 700; letter-spacing: .04em; }
+details.sec > summary { cursor: pointer; margin: 0; }
+details.sec[open] > summary { margin-bottom: 10px; }
+.sec .hint { color: var(--muted); font-size: 12px; margin: -4px 0 10px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+label.f { display: flex; flex-direction: column; gap: 3px; min-width: 0; font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+label.f:last-child { margin-bottom: 0; }
+.grid2 > label.f { margin-bottom: 0; }
+input[type=text], input[type=date], textarea { font: inherit; font-size: 14px; color: var(--ink); background: var(--field); border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px; width: 100%; min-width: 0; }
+textarea { resize: vertical; line-height: 1.55; }
+.check { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-top: 10px; color: var(--ink); }
+.warn { color: var(--warn); font-size: 12px; margin: 6px 0 0; }
+.item { border: 1px solid var(--line); border-radius: 6px; padding: 12px; margin-bottom: 10px; background: color-mix(in srgb, var(--field) 55%, transparent); }
+.item-h { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 12px; color: var(--muted); }
+.item .grid2 + label.f, .item label.f + .grid2, .item .grid2 + .grid2 { margin-top: 10px; }
+.thumb { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.thumb img { max-height: 64px; max-width: 120px; border: 1px solid var(--line); border-radius: 4px; background: #fff; }
+
+.row-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+.doc { display: flex; gap: 8px; align-items: center; justify-content: space-between; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; margin-top: 8px; }
+.doc.cur { border-color: var(--accent); }
+.doc .meta { min-width: 0; overflow-wrap: anywhere; }
+.doc small { display: block; color: var(--muted); font-size: 12px; }
+.doc .acts { display: flex; gap: 6px; flex-shrink: 0; }
+.empty { color: var(--muted); font-size: 12px; margin: 8px 0 0; }
+.viewer { position: fixed; inset: 0; z-index: 50; background: var(--bg); display: flex; flex-direction: column; }
+.viewer[hidden] { display: none; }
+.viewer-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding-block: 10px; padding-top: calc(10px + env(safe-area-inset-top, 0px)); border-bottom: 1px solid var(--line); }
+.viewer-bar h2 { margin: 0 auto 0 0; font-size: 15px; min-width: 0; overflow-wrap: anywhere; }
+.viewer-body { flex: 1; overflow: auto; padding-block: 16px calc(24px + env(safe-area-inset-bottom, 0px)); }
+.preview { min-width: 0; }
+.pages { display: flex; flex-direction: column; gap: 18px; align-items: center; }
+.pages svg { width: 100%; max-width: 720px; height: auto; background: #fff; box-shadow: var(--shadow); display: block; }
+.status { font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 10px; }
+.toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 9px 16px; border-radius: 6px; font-size: 13px; z-index: 40; max-width: calc(100% - 32px); }
+
+@media (max-width: 900px) {
+  main { grid-template-columns: minmax(0, 1fr); }
+  .tabs { display: flex; }
+  body[data-view="form"] .preview { display: none; }
+  body[data-view="preview"] .form { display: none; }
+}
+@media (max-width: 480px) { .grid2 { grid-template-columns: 1fr; } .grid2.keep { grid-template-columns: 1fr 1fr; } }
+@media (prefers-reduced-motion: no-preference) { .btn { transition: border-color .15s, background .15s; } }
+</style>
+
+<body data-view="form">
+<header class="top wrap">
+  <div class="top-in">
+    <div class="brand"><h1>除雪契約書メーカー</h1><p>入力するとA4の契約書がその場で組み上がります</p></div>
+    <button class="btn" id="saveSrv" type="button" hidden>サーバーに保存</button>
+    <button class="btn" id="logout" type="button" hidden>ログアウト</button>
+    <button class="btn primary" id="save" type="button">PDFを保存</button>
+  </div>
+  <div class="tabs" id="tabs">
+    <button type="button" data-v="form" aria-pressed="true">入力</button>
+    <button type="button" data-v="preview" aria-pressed="false">プレビュー</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="form" id="form">
+    <section class="sec" id="savedSec" hidden>
+      <h2>保存した契約書</h2>
+      <p class="hint" id="curState"></p>
+      <div class="row-btns"><button class="btn small" id="newDoc" type="button">新規作成</button><button class="btn small" id="saveCopy" type="button">コピーとして保存</button></div>
+      <div id="saved"></div>
+    </section>
+
+    <section class="sec">
+      <h2>発注者</h2>
+      <label class="f">会社名・氏名<input type="text" id="o_name" data-p="orderer.name" autocomplete="off"></label>
+      <label class="f">住所<input type="text" id="o_addr" data-p="orderer.address" autocomplete="off"></label>
+      <label class="f">代表者名<input type="text" id="o_rep" data-p="orderer.rep" autocomplete="off"></label>
+      <p class="hint">住所や代表者名を空欄にすると、署名欄は手書き用の線になります。</p>
+    </section>
+
+    <section class="sec">
+      <h2>請負者</h2>
+      <label class="f">会社名<input type="text" id="c_name" data-p="contractor.name" autocomplete="off"></label>
+      <label class="f">住所<input type="text" id="c_addr" data-p="contractor.address" autocomplete="off"></label>
+      <label class="f">代表者名<input type="text" id="c_rep" data-p="contractor.rep" autocomplete="off"></label>
+    </section>
+
+    <section class="sec">
+      <h2>契約内容</h2>
+      <label class="f">業務の名称<input type="text" id="job" data-p="job" autocomplete="off"></label>
+      <div class="grid2 keep">
+        <label class="f">契約開始日<input type="date" id="start" data-p="start"></label>
+        <label class="f">契約終了日<input type="date" id="end" data-p="end"></label>
+      </div>
+      <p class="warn" id="dateWarn" hidden>終了日が開始日より前になっています。</p>
+      <label class="check"><input type="checkbox" id="renewal" data-p="renewal"> 翌シーズン以降の再契約の文を入れる</label>
+      <label class="check"><input type="checkbox" id="showSign" data-p="showSignDate"> 契約締結日を署名欄の上に入れる</label>
+      <label class="f" id="signWrap" style="margin-top:10px" hidden>契約締結日（空欄なら「令和　年　月　日」）<input type="date" id="signDate" data-p="signDate"></label>
+    </section>
+
+    <section class="sec">
+      <h2>別紙 現場情報</h2>
+      <div id="sites"></div>
+      <button class="btn small" type="button" id="addSite">＋ 現場を追加</button>
+    </section>
+
+    <section class="sec">
+      <h2>別表1 単価表</h2>
+      <p class="hint">金額は税抜で入力します。仕様欄は改行できます。</p>
+      <div id="prices"></div>
+      <button class="btn small" type="button" id="addPrice">＋ 行を追加</button>
+    </section>
+
+    <details class="sec">
+      <summary>条文を編集する</summary>
+      <p class="hint">改行ごとに段落が分かれます。ひな形の文言が初期値です。</p>
+      <label class="f">2. 業務範囲<textarea id="scope" rows="2" data-p="scope"></textarea></label>
+      <label class="f">4. 委託金額<textarea id="amount" rows="5" data-p="amount"></textarea></label>
+      <label class="f">5. 支払条件<textarea id="pay" rows="3" data-p="pay"></textarea></label>
+      <label class="f">6. 損害賠償<textarea id="damage" rows="5" data-p="damage"></textarea></label>
+      <label class="f">7. 契約解除<textarea id="cancel" rows="5" data-p="cancel"></textarea></label>
+      <label class="f">8. 特約事項<textarea id="special" rows="4" data-p="special"></textarea></label>
+    </details>
+  </div>
+
+  <div class="preview">
+    <div class="status" id="status">フォントを読み込んでいます…</div>
+    <div class="pages" id="pages"></div>
+  </div>
+</main>
+<div class="viewer" id="viewer" hidden role="dialog" aria-modal="true" aria-label="保存した契約書">
+  <div class="viewer-bar wrap">
+    <h2 id="vTitle"></h2>
+    <button class="btn" id="vEdit" type="button">編集する</button>
+    <button class="btn primary" id="vPdf" type="button">PDFを保存</button>
+    <button class="btn" id="vClose" type="button">閉じる</button>
+  </div>
+  <div class="viewer-body wrap"><div class="pages" id="vPages"></div></div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
+<script>
+const FONT_REG_B64 = "";
+const FONT_BOLD_B64 = "";
+</script>
+<script>
+(function () {
+  "use strict";
+  const { PDFDocument, rgb } = PDFLib;
+  const PW = 595.28, PH = 841.89, ML = 64, MR = 64, MT = 70, MB = 66, CW = PW - ML - MR;
+  const STORE = "josetsu-keiyaku-v1";
+
+  /* ---------- 初期値（ひな形の文言） ---------- */
+  const DEFAULTS = () => ({
+    orderer: { name: "株式会社トライス", address: "", rep: "" },
+    contractor: { name: "株式会社三桜", address: "岩手県盛岡市本宮7丁目7-41", rep: "代表取締役　阿部晋太郎" },
+    job: "敷地内除雪作業",
+    start: "2026-12-01", end: "2027-03-31",
+    renewal: true, showSignDate: false, signDate: "",
+    scope: "別紙のとおり",
+    amount: "除雪業務及び凍結防止剤散布業務（以下「除雪業務」という）は、別表１に定める単価契約とする。\n別表に定めのない業務又は費目（単価）については、発注者と請負者とが協議して定めることとする。",
+    pay: "契約期間前までに請負者より請求書を発行し、発注者は支払期日までに銀行振込にて支払うこととする。（消費税を含む）",
+    damage: "請負者は、細心の注意をもって作業を行うものとするが、発注者の管理する物件・施設に損害を与えたときは、双方話合いの上、賠償の責を負う。（但し、物件・施設の経年劣化によるトラブルや請負者に瑕疵がなかった場合は除く。）",
+    cancel: "本契約期間中、一方から１ヶ月前までの予告をもって本契約の解除を申し入れることが出来る。この場合、予告期間の満了と同時に本契約は終了する。\nこの時、委託金額の返金は行わないものとする。",
+    special: "本契約に定めなき事項が生じた場合及び本契約の内容について疑義が生じた場合、双方協議してこれを定める。又、例年以上の降雪量となった場合も同様とする。",
+    sites: [{ name: "株式会社トライス", address: "〒020-0045　岩手県盛岡市盛岡駅西通2丁目17番10号", area: "1830",
+      map: "", mapW: 0, mapH: 0,
+      dispatch: "・積雪量10センチにて自動出動\n・前日21:00までに電話等にて連絡\n※別途変更は可能",
+      handover: "当日7:00まで（積雪状況により変動する場合あり）", note: "敷地内に排雪" }],
+    prices: [
+      { task: "除雪", spec: "基本料金（シーズン契約料）\n※10回分の出動は無料", unit: "式", price: "468480" },
+      { task: "", spec: "出動料金（11回目以降）", unit: "回", price: "64415" }
+    ]
+  });
+
+  let S = DEFAULTS();
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORE) || "null");
+    if (saved && typeof saved === "object") S = Object.assign(DEFAULTS(), saved);
+  } catch (e) {}
+  function localStorage_has() { try { return !!localStorage.getItem(STORE); } catch (e) { return false; } }
+  // claude.ai 上では window.claude の機能（PDF保存・サーバー保存）を使い、それ以外では標準のダウンロードに切り替える
+  async function cap(name) { try { return window.claude ? (await window.claude.use(name)) || null : null; } catch (e) { return null; } }
+  function persist() { try { localStorage.setItem(STORE, JSON.stringify(S)); } catch (e) {} }
+
+  /* ---------- フォント ---------- */
+  const b64ToBytes = (b64) => { const bin = atob(b64); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; };
+  let regBytes, boldBytes, mReg, mBold, regSet, boldSet, fontsReady = false;
+  const cwCache = new Map();
+
+  async function initFonts() {
+    // claude.ai ではフォントをページに埋め込み、単体のWebでは window.__FONT_URLS から読み込む
+    const load = async (b64, url) => b64 ? b64ToBytes(b64) : new Uint8Array(await (await fetch(url)).arrayBuffer());
+    const urls = window.__FONT_URLS || {};
+    [regBytes, boldBytes] = await Promise.all([load(FONT_REG_B64, urls.reg), load(FONT_BOLD_B64, urls.bold)]);
+    const md = await PDFDocument.create();
+    md.registerFontkit(fontkit);
+    mReg = await md.embedFont(regBytes, { subset: true });
+    mBold = await md.embedFont(boldBytes, { subset: true });
+    regSet = new Set(mReg.getCharacterSet());
+    boldSet = new Set(mBold.getCharacterSet());
+    try {
+      const f1 = new FontFace("SJP", regBytes.slice(0).buffer);
+      const f2 = new FontFace("SJPB", boldBytes.slice(0).buffer);
+      await Promise.all([f1.load(), f2.load()]);
+      document.fonts.add(f1); document.fonts.add(f2);
+    } catch (e) {}
+    fontsReady = true;
+  }
+
+  const san = (s) => [...String(s == null ? "" : s).replace(/\t/g, " ").replace(/\r/g, "")].map((c) => (c === "\n" || regSet.has(c.codePointAt(0)) ? c : "？")).join("");
+  const canBold = (s) => [...s].every((c) => boldSet.has(c.codePointAt(0)));
+  function cw(c, size, bold) {
+    const k = c + "|" + size + "|" + (bold ? 1 : 0);
+    let w = cwCache.get(k);
+    if (w === undefined) { w = (bold ? mBold : mReg).widthOfTextAtSize(c, size); cwCache.set(k, w); }
+    return w;
+  }
+  const tw = (s, size, bold, sp) => { let w = 0; for (const c of s) w += cw(c, size, bold) + (sp || 0); return sp ? w - sp : w; };
+
+  const NOSTART = new Set("、。，．,.）〕］｝〉》」』】・：；？！ー゛゜ゝゞ々ぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮ%％）)]".split(""));
+  const NOEND = new Set("（〔［｛〈《「『【([".split(""));
+  function wrap(text, size, maxW, bold) {
+    const out = [];
+    for (const para of String(text).split("\n")) {
+      if (para === "") { out.push(""); continue; }
+      let line = "", w = 0;
+      for (const c of para) {
+        const cwid = cw(c, size, bold);
+        if (w + cwid > maxW + 0.01 && line) {
+          if (NOSTART.has(c)) { line += c; w += cwid; continue; }
+          const arr = [...line];
+          if (NOEND.has(arr[arr.length - 1]) && arr.length > 1) {
+            const mv = arr.pop(); out.push(arr.join("")); line = mv; w = tw(mv, size, bold);
+          } else { out.push(line); line = ""; w = 0; }
+        }
+        line += c; w += cwid;
+      }
+      out.push(line);
+    }
+    return out;
+  }
+
+  /* ---------- 日付 ---------- */
+  function reiwa(iso) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || "");
+    if (!m) return null;
+    const y = +m[1], mo = +m[2], d = +m[3];
+    const era = y >= 2019 ? "令和" + (y === 2019 ? "元" : y - 2018) + "年" : y + "年";
+    return { text: era + mo + "月" + d + "日", month: mo, t: Date.UTC(y, mo - 1, d) };
+  }
+  const yen = (v) => { const n = String(v == null ? "" : v).replace(/[,，円\s]/g, ""); return /^-?\d+(\.\d+)?$/.test(n) ? Number(n).toLocaleString("ja-JP") : String(v || ""); };
+
+  /* ---------- レイアウト（描画命令のリストを作る） ---------- */
+  function layout(S) {
+    const pages = [];
+    let P = null, y = 0;
+    const newPage = () => { P = { ops: [] }; pages.push(P); y = MT; };
+    const room = (h) => y + h <= PH - MB;
+    const need = (h) => { if (!room(h)) newPage(); };
+    const txt = (x, base, s, size, bold, o) => {
+      if (!s) return;
+      o = o || {};
+      P.ops.push({ t: "text", x, y: base, s, size, bold: !!bold && canBold(s), sp: o.sp || 0, c: o.c || 0 });
+    };
+    const line = (x1, y1, x2, y2, w) => P.ops.push({ t: "line", x1, y1, x2, y2, w: w || 0.6 });
+    const baseOf = (top, lh, size) => top + lh / 2 + size * 0.38;
+
+    newPage();
+
+    // 表題
+    const title = "除雪等業務委託契約書";
+    const tsz = 18, tsp = 5;
+    txt(ML + (CW - tw(title, tsz, true, tsp)) / 2, baseOf(y, 30, tsz), title, tsz, true, { sp: tsp });
+    y += 30 + 26;
+
+    // 前文
+    const O = S.orderer, C = S.contractor;
+    const oName = san(O.name).trim() || "＿＿＿＿＿＿＿＿";
+    const cName = san(C.name).trim() || "＿＿＿＿＿＿＿＿";
+    const para = (text, o) => {
+      o = o || {};
+      const size = o.size || 10.5, lh = o.lh || 19, x = ML + (o.x || 0), w = CW - (o.x || 0);
+      const lines = wrap(text, size, w - (o.first || 0), false);
+      lines.forEach((ln, i) => {
+        need(lh);
+        const fx = x + (i === 0 ? o.first || 0 : 0);
+        txt(fx, baseOf(y, lh, size), ln, size, false);
+        y += lh;
+      });
+    };
+    para("発注者　" + oName + "　と、請負者　" + cName + "　とは、以下のとおり除雪等業務委託契約を締結する。", { first: 10.5 });
+    y += 10;
+    const ki = "記";
+    txt(ML + (CW - tw(ki, 11, false)) / 2, baseOf(y, 22, 11), ki, 11, false);
+    y += 22 + 8;
+
+    // 条項
+    const st = reiwa(S.start), en = reiwa(S.end);
+    const periodTxt = (st ? st.text : "令和　年　月　日") + "から" + (en ? en.text : "令和　年　月　日") + "まで";
+    const periodParas = [periodTxt];
+    if (S.renewal && en) {
+      const nm = en.month % 12 + 1;
+      periodParas.push("なお、" + nm + "月以降については、前項の履行期間満了日前に発注者が請負者に履行期間の再契約を申し入れ、請負者がこれを承諾したときは、機械管理費を除きこの契約と同一条件で契約するものとする。");
+    }
+    const clauses = [
+      ["１．業務の名称", [S.job]],
+      ["２．業務範囲", String(S.scope).split("\n")],
+      ["３．契約期間", periodParas],
+      ["４．委託金額", String(S.amount).split("\n")],
+      ["５．支払条件", String(S.pay).split("\n")],
+      ["６．損害賠償", String(S.damage).split("\n")],
+      ["７．契約解除", String(S.cancel).split("\n")],
+      ["８．特約事項", String(S.special).split("\n")]
+    ];
+    const BX = 14, bsz = 10.5, blh = 18.5;
+    clauses.forEach(([head, body]) => {
+      const lines = [];
+      body.map(san).filter((p) => p.trim() !== "").forEach((p, i) => {
+        wrap(p, bsz, CW - BX, false).forEach((l) => lines.push({ l, gap: 0 }));
+        lines[lines.length - 1].gap = 3;
+      });
+      need(22 + blh * Math.min(2, Math.max(lines.length, 1)));
+      txt(ML, baseOf(y, 22, 11), head.replace(/[０-９]/g, (d) => d), 11, true);
+      y += 22;
+      lines.forEach((o) => { need(blh); txt(ML + BX, baseOf(y, blh, bsz), o.l, bsz, false); y += blh + o.gap; });
+      y += 6;
+    });
+
+    // 署名欄
+    y += 8;
+    const showDate = S.showSignDate;
+    const blockH = 24 + 24 * 3 + 14;
+    need((showDate ? 34 : 0) + blockH * 2 + 40);
+    if (showDate) {
+      const sd = reiwa(S.signDate);
+      txt(ML, baseOf(y, 24, 10.5), sd ? sd.text : "令和　　年　　月　　日", 10.5, false);
+      y += 34;
+    }
+    const sign = (label, p) => {
+      txt(ML, baseOf(y, 24, 11), label, 11, true);
+      y += 24;
+      const lx = ML + 18, vx = ML + 88, ex = ML + CW - 46, maxW = ex - vx - 4;
+      [["住　所", p.address], ["会社名", p.name], ["氏　名", p.rep]].forEach((r, i) => {
+        const b = y + 17;
+        txt(lx, b, r[0], 10.5, false);
+        let v = san(r[1]).replace(/\n/g, " ").trim();
+        if (v) {
+          let sz = 10.5; while (tw(v, sz, false) > maxW && sz > 7.5) sz -= 0.5;
+          txt(vx, b, v, sz, false);
+        }
+        line(vx - 4, b + 4.5, ex, b + 4.5, 0.5);
+        if (i === 2) { txt(ex + 12, b, "印", 10.5, false); }
+        y += 24;
+        if (i === 2) { txt(vx, y + 5, "（又は代表者名）", 8.5, false, { c: 0.35 }); y += 12; }
+      });
+      y += 10;
+    };
+    sign("発注者", O);
+    sign("請負者", C);
+    need(24);
+    const end = "以上";
+    txt(ML + CW - tw(end, 10.5, false), baseOf(y, 22, 10.5), end, 10.5, false);
+    y += 22;
+
+    /* ----- 表の共通描画 ----- */
+    function drawTable(colW, rows, header, mergeCol0) {
+      const x0 = ML;
+      const xs = [x0]; colW.forEach((w) => xs.push(xs[xs.length - 1] + w));
+      let open = false, segTop = 0;
+      const cellsOf = (r) => r.cells;
+      const rowH = (r) => r.h;
+      const closeSeg = () => { if (open) { line(xs[0], y, xs[xs.length - 1], y, 0.8); open = false; } };
+      const drawRow = (r, first, isHeader) => {
+        const h = rowH(r);
+        if (first) line(xs[0], y, xs[xs.length - 1], y, 0.8);
+        else {
+          const blank0 = mergeCol0 && !isHeader && r.cells[0].lines.every((l) => l === "");
+          line(blank0 ? xs[1] : xs[0], y, xs[xs.length - 1], y, 0.5);
+        }
+        if (isHeader) P.ops.push({ t: "rect", x: xs[0], y, w: xs[xs.length - 1] - xs[0], h, fill: 0.92 });
+        xs.forEach((x, i) => line(x, y, x, y + h, i === 0 || i === xs.length - 1 ? 0.8 : 0.5));
+        r.cells.forEach((c, i) => {
+          const cx = xs[i], w = colW[i];
+          if (c.img) {
+            P.ops.push({ t: "img", x: cx + (w - c.img.w) / 2, y: y + (h - c.img.h) / 2, w: c.img.w, h: c.img.h, data: c.img.data });
+            return;
+          }
+          const n = c.lines.length, bh = n * c.lh;
+          let top = c.valign === "middle" ? y + (h - bh) / 2 : y + 8;
+          c.lines.forEach((l) => {
+            if (l) {
+              const wd = tw(l, c.size, c.bold);
+              const tx = c.align === "center" ? cx + (w - wd) / 2 : c.align === "right" ? cx + w - 8 - wd : cx + 8;
+              txt(tx, baseOf(top, c.lh, c.size), l, c.size, c.bold);
+            }
+            top += c.lh;
+          });
+        });
+        y += h;
+      };
+      if (header) {
+        need(header.h + rows[0].h);
+      } else need(rows[0].h);
+      let first = true;
+      if (header) { drawRow(header, true, true); open = true; first = false; }
+      rows.forEach((r, i) => {
+        if (!room(r.h)) {
+          closeSeg(); newPage(); first = true;
+          if (header) { drawRow(header, true, true); first = false; }
+        }
+        drawRow(r, first, false); first = false; open = true;
+      });
+      closeSeg();
+    }
+    const mk = (text, w, o) => {
+      o = o || {};
+      const size = o.size || 10.5, lh = o.lh || 17;
+      return { lines: wrap(san(text), size, w - 16, !!o.bold), size, lh, bold: !!o.bold, align: o.align || "left", valign: o.valign || "top" };
+    };
+    const hOf = (cells, min) => Math.max(min || 30, ...cells.map((c) => (c.img ? c.img.h + 16 : c.lines.length * c.lh + 16)));
+
+    /* ----- 別紙 ----- */
+    const LW = 84, VW = CW - LW;
+    S.sites.forEach((s, idx) => {
+      newPage();
+      const head = S.sites.length > 1 ? "【別紙" + (idx + 1) + "】" : "【別紙】";
+      txt(ML, baseOf(y, 24, 12), head, 12, true);
+      y += 34;
+      const rowsDef = [["現場名", s.name], ["住所", s.address], ["平米数", String(s.area || "").trim() === "" ? "" : yen(s.area) + "㎡"]];
+      const rows = [];
+      const push = (label, value, mapImg) => {
+        const l = mk(label, LW, { valign: "middle", align: "center" });
+        let v;
+        if (mapImg) v = { img: mapImg, lines: [], lh: 0, size: 10.5 };
+        else v = mk(value, VW);
+        rows.push({ cells: [l, v], h: hOf([l, v]) });
+      };
+      rowsDef.forEach(([a, b]) => push(a, b));
+      if (s.map && s.mapW && s.mapH) {
+        const bw = VW - 20, bh = 230, k = Math.min(bw / s.mapW, bh / s.mapH, 1.5);
+        push("地図", "", { data: s.map, w: s.mapW * k, h: s.mapH * k });
+      }
+      push("出動条件", s.dispatch);
+      push("引渡時間", s.handover);
+      push("特記事項", s.note);
+      drawTable([LW, VW], rows, null, false);
+    });
+
+    /* ----- 別表1 ----- */
+    {
+      const cols = [74, 243, 50, CW - 74 - 243 - 50];
+      if (!P || S.sites.length === 0) newPage();
+      else y += 26;
+      const prices = S.prices;
+      const headCells = ["業務名", "仕様", "単位", "単価（税抜）"].map((t, i) => mk(t, cols[i], { bold: true, align: "center", valign: "middle" }));
+      const header = { cells: headCells, h: hOf(headCells, 28) };
+      const rows = prices.map((p) => {
+        const cells = [mk(p.task, cols[0], { valign: "middle" }), mk(p.spec, cols[1], { valign: "middle" }),
+          mk(p.unit, cols[2], { align: "center", valign: "middle" }), mk(yen(p.price), cols[3], { align: "right", valign: "middle" })];
+        return { cells, h: hOf(cells, 34) };
+      });
+      const label = "【別表1】";
+      if (!room(24 + 10 + header.h + (rows[0] ? rows[0].h : 0))) newPage();
+      txt(ML, baseOf(y, 24, 12), label, 12, true);
+      y += 34;
+      if (rows.length) drawTable(cols, rows, header, true);
+    }
+
+    // ページ番号
+    pages.forEach((pg, i) => {
+      const s = "- " + (i + 1) + " / " + pages.length + " -";
+      pg.ops.push({ t: "text", x: PW / 2 - tw(s, 8.5, false) / 2, y: PH - 34, s, size: 8.5, bold: false, sp: 0, c: 0.4 });
+    });
+    return pages;
+  }
+
+  /* ---------- プレビュー（SVG） ---------- */
+  const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const gray = (c) => { const v = Math.round(c * 255); return "rgb(" + v + "," + v + "," + v + ")"; };
+  function toSvg(pg) {
+    let h = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + PW + " " + PH + '" role="img" aria-label="契約書プレビュー"><rect width="' + PW + '" height="' + PH + '" fill="#fff"/>';
+    for (const o of pg.ops) {
+      if (o.t === "text") h += '<text x="' + o.x.toFixed(2) + '" y="' + o.y.toFixed(2) + '" font-size="' + o.size + '" font-family="' + (o.bold ? "SJPB" : "SJP") + ', serif" fill="' + gray(o.c) + '"' + (o.sp ? ' letter-spacing="' + o.sp + '"' : "") + ' style="white-space:pre">' + esc(o.s) + "</text>";
+      else if (o.t === "line") h += '<line x1="' + o.x1.toFixed(2) + '" y1="' + o.y1.toFixed(2) + '" x2="' + o.x2.toFixed(2) + '" y2="' + o.y2.toFixed(2) + '" stroke="#000" stroke-width="' + o.w + '"/>';
+      else if (o.t === "rect") h += '<rect x="' + o.x.toFixed(2) + '" y="' + o.y.toFixed(2) + '" width="' + o.w.toFixed(2) + '" height="' + o.h.toFixed(2) + '" fill="' + gray(o.fill) + '"/>';
+      else if (o.t === "img") h += '<image href="' + o.data + '" x="' + o.x.toFixed(2) + '" y="' + o.y.toFixed(2) + '" width="' + o.w.toFixed(2) + '" height="' + o.h.toFixed(2) + '"/>';
+    }
+    return h + "</svg>";
+  }
+
+  /* ---------- PDF ---------- */
+  async function buildPdf(pages, st) {
+    st = st || S;
+    const doc = await PDFDocument.create();
+    doc.registerFontkit(fontkit);
+    const reg = await doc.embedFont(regBytes, { subset: true });
+    const bold = await doc.embedFont(boldBytes, { subset: true });
+    const imgs = new Map();
+    for (const pg of pages) {
+      const p = doc.addPage([PW, PH]);
+      for (const o of pg.ops) {
+        if (o.t === "text") {
+          const font = o.bold ? bold : reg, color = rgb(o.c, o.c, o.c);
+          if (o.sp) {
+            let x = o.x;
+            for (const ch of o.s) { p.drawText(ch, { x, y: PH - o.y, size: o.size, font, color }); x += font.widthOfTextAtSize(ch, o.size) + o.sp; }
+          } else p.drawText(o.s, { x: o.x, y: PH - o.y, size: o.size, font, color });
+        } else if (o.t === "line") {
+          p.drawLine({ start: { x: o.x1, y: PH - o.y1 }, end: { x: o.x2, y: PH - o.y2 }, thickness: o.w, color: rgb(0, 0, 0) });
+        } else if (o.t === "rect") {
+          p.drawRectangle({ x: o.x, y: PH - o.y - o.h, width: o.w, height: o.h, color: rgb(o.fill, o.fill, o.fill), borderWidth: 0 });
+        } else if (o.t === "img") {
+          let im = imgs.get(o.data);
+          if (!im) { im = await doc.embedJpg(o.data); imgs.set(o.data, im); }
+          p.drawImage(im, { x: o.x, y: PH - o.y - o.h, width: o.w, height: o.h });
+        }
+      }
+    }
+    doc.setTitle("除雪等業務委託契約書");
+    doc.setAuthor(st.contractor.name || "");
+    doc.setSubject(st.job || "");
+    doc.setCreationDate(new Date());
+    return await doc.save();
+  }
+
+  /* ---------- 画面 ---------- */
+  const $ = (id) => document.getElementById(id);
+  const getP = (path) => path.split(".").reduce((o, k) => o[k], S);
+  const setP = (path, v) => { const k = path.split("."); const last = k.pop(); k.reduce((o, kk) => o[kk], S)[last] = v; };
+
+  let timer = null, lastPages = [], dirty = !!localStorage_has(), store = null, canWrite = true, savedList = [];
+  function refresh() {
+    if (!fontsReady) return;
+    try {
+      lastPages = layout(S);
+      $("pages").innerHTML = lastPages.map(toSvg).join("");
+      $("status").textContent = "A4・全" + lastPages.length + "ページ　内容はこの端末のブラウザに自動保存されます";
+    } catch (e) {
+      $("status").textContent = "プレビューの作成に失敗しました：" + e.message;
+    }
+    const st = reiwa(S.start), en = reiwa(S.end);
+    $("dateWarn").hidden = !(st && en && en.t < st.t);
+    $("signWrap").hidden = !S.showSignDate;
+  }
+  const schedule = () => { dirty = true; showState(); persist(); clearTimeout(timer); timer = setTimeout(refresh, 120); };
+
+  function bindStatic() {
+    document.querySelectorAll("[data-p]").forEach((el) => {
+      const p = el.dataset.p;
+      if (el.type === "checkbox") { el.checked = !!getP(p); el.addEventListener("change", () => { setP(p, el.checked); schedule(); }); }
+      else { el.value = getP(p) || ""; el.addEventListener("input", () => { setP(p, el.value); schedule(); }); }
+    });
+  }
+
+  function fieldHtml(label, cls, attrs, tag) {
+    return '<label class="f ' + (cls || "") + '">' + label + (tag === "ta" ? "<textarea " + attrs + "></textarea>" : '<input type="text" autocomplete="off" ' + attrs + ">") + "</label>";
+  }
+  function renderSites() {
+    const box = $("sites"); box.innerHTML = "";
+    S.sites.forEach((s, i) => {
+      const d = document.createElement("div"); d.className = "item";
+      d.innerHTML =
+        '<div class="item-h"><span>現場 ' + (i + 1) + '</span>' + (S.sites.length > 1 ? '<button class="btn small danger" type="button" data-del>削除</button>' : "") + "</div>" +
+        fieldHtml("現場名", "", 'data-k="name"') + fieldHtml("住所", "", 'data-k="address"') +
+        fieldHtml("平米数（㎡）", "", 'data-k="area" inputmode="decimal"') +
+        '<div class="f" style="margin-bottom:10px"><span style="font-size:12px;color:var(--muted)">地図画像（任意・画像ファイル）</span><div class="thumb"><input type="file" accept="image/*" data-map style="max-width:100%;font-size:12px">' +
+        (s.map ? '<img alt="地図" src="' + s.map + '"><button class="btn small" type="button" data-unmap>外す</button>' : "") + "</div></div>" +
+        fieldHtml("出動条件", "", 'rows="3" data-k="dispatch"', "ta") + fieldHtml("引渡時間", "", 'data-k="handover"') + fieldHtml("特記事項", "", 'rows="2" data-k="note"', "ta");
+      d.querySelectorAll("[data-k]").forEach((el) => {
+        el.value = s[el.dataset.k] || "";
+        el.addEventListener("input", () => { s[el.dataset.k] = el.value; schedule(); });
+      });
+      const del = d.querySelector("[data-del]"); if (del) del.onclick = () => { S.sites.splice(i, 1); renderSites(); schedule(); };
+      const un = d.querySelector("[data-unmap]"); if (un) un.onclick = () => { s.map = ""; s.mapW = s.mapH = 0; renderSites(); schedule(); };
+      d.querySelector("[data-map]").addEventListener("change", (ev) => loadMap(ev.target.files[0], s));
+      box.appendChild(d);
+    });
+  }
+  function loadMap(file, s) {
+    if (!file) return;
+    const url = URL.createObjectURL(file), im = new Image();
+    im.onload = () => {
+      const k = Math.min(1, 1400 / im.naturalWidth), w = Math.round(im.naturalWidth * k), h = Math.round(im.naturalHeight * k);
+      const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+      const g = cv.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, w, h); g.drawImage(im, 0, 0, w, h);
+      s.map = cv.toDataURL("image/jpeg", 0.85); s.mapW = w; s.mapH = h;
+      URL.revokeObjectURL(url); renderSites(); schedule();
+    };
+    im.onerror = () => { URL.revokeObjectURL(url); toast("画像を読み込めませんでした"); };
+    im.src = url;
+  }
+  function renderPrices() {
+    const box = $("prices"); box.innerHTML = "";
+    S.prices.forEach((p, i) => {
+      const d = document.createElement("div"); d.className = "item";
+      d.innerHTML =
+        '<div class="item-h"><span>行 ' + (i + 1) + '</span><button class="btn small danger" type="button" data-del>削除</button></div>' +
+        fieldHtml("業務名（空欄なら上の行と同じ扱い）", "", 'data-k="task"') +
+        fieldHtml("仕様", "", 'rows="2" data-k="spec"', "ta") +
+        '<div class="grid2 keep">' + fieldHtml("単位", "", 'data-k="unit"') + fieldHtml("単価（税抜・円）", "", 'data-k="price" inputmode="numeric"') + "</div>";
+      d.querySelectorAll("[data-k]").forEach((el) => {
+        el.value = p[el.dataset.k] || "";
+        el.addEventListener("input", () => { p[el.dataset.k] = el.value; schedule(); });
+      });
+      d.querySelector("[data-del]").onclick = () => { S.prices.splice(i, 1); renderPrices(); schedule(); };
+      box.appendChild(d);
+    });
+  }
+
+  let toastT;
+  function toast(msg) { const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => (t.hidden = true), 3200); }
+
+  async function savePdf(st, btnEl) {
+    st = (st && st.orderer) ? st : S;
+    const btn = btnEl || $("save");
+    btn.disabled = true; const label = btn.textContent; btn.textContent = "作成中…";
+    try {
+      const dl = await cap("downloads");
+      const pages = layout(st);
+      const bytes = await buildPdf(pages, st);
+      const nm = (st.orderer.name || "発注者").replace(/[\\/:*?"<>|\s]+/g, "");
+      const filename = "除雪等業務委託契約書_" + nm + ".pdf";
+      if (dl) await dl.save({ filename, data: bytes });
+      else {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+        a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      }
+      toast("PDFを保存しました");
+    } catch (e) {
+      if (e && e.code === "declined") toast("保存をキャンセルしました");
+      else toast("PDFを作成できませんでした：" + ((e && e.message) || e));
+    } finally { btn.disabled = false; btn.textContent = label; }
+  }
+
+  /* ---------- サーバー保存（db） ---------- */
+  function refillForm() {
+    document.querySelectorAll("[data-p]").forEach((el) => { const v = getP(el.dataset.p); if (el.type === "checkbox") el.checked = !!v; else el.value = v || ""; });
+    renderSites(); renderPrices();
+  }
+  const docTitle = () => (S.orderer.name || "発注者未定") + "　" + ((reiwa(S.start) || { text: "" }).text.replace(/月.*/, "月") || "");
+  const fmtTime = (ms) => { const d = new Date(ms); return d.getFullYear() + "/" + (d.getMonth() + 1) + "/" + d.getDate() + " " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); };
+  function showState() {
+    const el = $("curState"); if (!el) return;
+    const cur = savedList.find((d) => d.id === S._id);
+    el.textContent = !canWrite ? "この権限では保存できません（閲覧のみ）。" :
+      S._id ? (cur ? "「" + cur.title + "」を" + (dirty ? "編集中です（未保存の変更あり）。" : "保存済みです。") : (dirty ? "編集中です（未保存の変更あり）。" : "")) :
+      "新しい契約書です。まだサーバーに保存されていません。";
+  }
+  function renderSaved() {
+    const box = $("saved"); box.innerHTML = "";
+    if (!savedList.length) { box.innerHTML = '<p class="empty">保存された契約書はまだありません。右上の「サーバーに保存」で追加できます。</p>'; showState(); return; }
+    savedList.forEach((d) => {
+      const row = document.createElement("div"); row.className = "doc" + (d.id === S._id ? " cur" : "");
+      const m = document.createElement("div"); m.className = "meta";
+      m.innerHTML = "<b></b><small></small>"; m.firstChild.textContent = d.title; m.lastChild.textContent = "更新 " + fmtTime(d.updatedAt) + (d.job ? "　" + d.job : "");
+      const a = document.createElement("div"); a.className = "acts";
+      const view = document.createElement("button"); view.className = "btn small"; view.type = "button"; view.textContent = "見る"; view.onclick = () => viewDoc(d.id);
+      a.appendChild(view);
+      if (canWrite) {
+        const open = document.createElement("button"); open.className = "btn small"; open.type = "button"; open.textContent = "編集"; open.onclick = () => openDoc(d.id);
+        a.appendChild(open);
+      }
+      if (canWrite) {
+        const del = document.createElement("button"); del.className = "btn small danger"; del.type = "button"; del.textContent = "削除";
+        let armed = false;
+        del.onclick = () => {
+          if (!armed) { armed = true; del.textContent = "本当に削除"; setTimeout(() => { armed = false; del.textContent = "削除"; }, 3000); return; }
+          delDoc(d);
+        };
+        a.appendChild(del);
+      }
+      row.appendChild(m); row.appendChild(a); box.appendChild(row);
+    });
+    showState();
+  }
+  const newId = () => "c" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  let busySave = false;
+  async function saveToServer(asNew) {
+    if (!store || busySave) return;
+    busySave = true;
+    const b = $("saveSrv"), label = b.textContent; b.disabled = true; b.textContent = "保存中…";
+    try {
+      const id = !asNew && S._id ? S._id : newId();
+      const st = JSON.parse(JSON.stringify(S)); delete st._id;
+      st.sites.forEach((s) => { s.hasMap = !!s.map; });
+      const meta = { title: docTitle(), job: S.job || "", start: S.start || "", end: S.end || "", nSites: st.sites.length, updatedAt: Date.now() };
+      await store.save(id, meta, st, savedList.find((d) => d.id === id));
+      S._id = id; dirty = false; persist(); showState(); renderSaved();
+      toast(asNew ? "コピーとして保存しました" : "サーバーに保存しました");
+    } catch (e) {
+      toast(e && (e.code === "invalid_argument" || e.code === "revoked" || e.status === 401 || e.status === 403) ? "保存する権限がありません（Vercelにログインしているか確認してください）" : e && (e.code === "quota_exceeded" || e.status === 413) ? "保存の上限に達しています。地図画像を小さくするか、古い契約書を削除してください" : "保存できませんでした：" + ((e && e.message) || e));
+    } finally { busySave = false; b.disabled = false; b.textContent = label; }
+  }
+  async function loadDoc(id) {
+    const r = await store.load(id);
+    if (!r) { toast("契約書が見つかりません"); return null; }
+    const st = Object.assign(DEFAULTS(), r.state);
+    st._id = id; st._title = r.title;
+    return st;
+  }
+  let viewing = null;
+  async function viewDoc(id) {
+    try {
+      const st = await loadDoc(id); if (!st) return;
+      viewing = st;
+      $("vTitle").textContent = st._title || "契約書";
+      $("vPages").innerHTML = layout(st).map(toSvg).join("");
+      $("vEdit").hidden = !canWrite;
+      $("viewer").hidden = false; $("viewer").querySelector(".viewer-body").scrollTop = 0;
+      $("vClose").focus();
+    } catch (e) { toast("表示できませんでした：" + ((e && e.message) || e)); }
+  }
+  function closeViewer() { $("viewer").hidden = true; viewing = null; $("vPages").innerHTML = ""; }
+  async function openDoc(id) {
+    try {
+      const st = await loadDoc(id);
+      if (!st) return;
+      const snapTitle = st._title; delete st._title; S = st; dirty = false; persist(); refillForm(); refresh(); renderSaved();
+      toast("「" + snapTitle + "」を編集できます");
+      document.body.dataset.view = "form";
+    } catch (e) { toast("開けませんでした：" + ((e && e.message) || e)); }
+  }
+  async function delDoc(d) {
+    try {
+      await store.remove(d);
+      if (S._id === d.id) { delete S._id; persist(); }
+      toast("削除しました");
+    } catch (e) { toast("削除できませんでした：" + ((e && e.message) || e)); }
+  }
+  function newDoc() {
+    const keep = S.contractor; S = DEFAULTS(); S.contractor = keep; S.orderer = { name: "", address: "", rep: "" };
+    dirty = false; persist(); refillForm(); refresh(); renderSaved(); toast("新しい契約書を作成しました");
+  }
+  /* claude.ai の db を使う保存先（地図画像は別ドキュメントに分けて持つ） */
+  function claudeStore(db) {
+    return {
+      subscribe(ok, err) {
+        db.collection("contracts").orderBy("updatedAt", "desc").limit(200).onSnapshot((snap) => ok(snap.docs.map((d) => Object.assign({ id: d.id }, d.data()))), err);
+      },
+      async save(id, meta, st, prev) {
+        st = JSON.parse(JSON.stringify(st));
+        const maps = st.sites.map((s) => { const m = s.map || ""; s.map = ""; return m; });
+        for (let i = 0; i < maps.length; i++) {
+          const ref = db.doc("contracts/" + id + "/maps/s" + i);
+          if (maps[i]) await ref.set({ data: maps[i] }); else if (prev && i < (prev.nSites || 0)) await ref.delete();
+        }
+        if (prev) for (let i = maps.length; i < (prev.nSites || 0); i++) await db.doc("contracts/" + id + "/maps/s" + i).delete();
+        await db.doc("contracts/" + id).set(Object.assign({}, meta, { state: JSON.stringify(st) }));
+      },
+      async load(id) {
+        const snap = await db.doc("contracts/" + id).get();
+        if (!snap.exists) return null;
+        const st = JSON.parse(snap.data().state);
+        for (let i = 0; i < st.sites.length; i++) {
+          if (st.sites[i].hasMap) { const m = await db.doc("contracts/" + id + "/maps/s" + i).get(); st.sites[i].map = m.exists ? m.data().data : ""; if (!m.exists) st.sites[i].hasMap = false; }
+        }
+        return { title: snap.data().title, state: st };
+      },
+      async remove(d) {
+        for (let i = 0; i < (d.nSites || 0); i++) await db.doc("contracts/" + d.id + "/maps/s" + i).delete();
+        await db.doc("contracts/" + d.id).delete();
+      }
+    };
+  }
+  /* Vercel などの一般のWebで使う保存先（/api/contracts） */
+  function httpStore() {
+    const subs = []; let timer = null;
+    const api = async (method, id, body) => {
+      const r = await fetch("/api/contracts" + (id ? "?id=" + encodeURIComponent(id) : ""), { method, cache: "no-store", headers: body ? { "content-type": "application/json" } : undefined, body: body ? JSON.stringify(body) : undefined });
+      if (r.status === 401) { location.reload(); }
+      if (!r.ok) { const e = new Error("サーバーの応答エラー (" + r.status + ")"); e.status = r.status; throw e; }
+      return r.status === 204 ? null : r.json();
+    };
+    const pull = async () => { try { const j = await api("GET"); subs.forEach((f) => f.ok(j.items)); } catch (e) { subs.forEach((f) => f.err && f.err(e)); } };
+    return {
+      probe: () => api("GET"),
+      subscribe(ok, err) { subs.push({ ok, err }); pull(); clearInterval(timer); timer = setInterval(() => { if (!document.hidden) pull(); }, 30000); },
+      async save(id, meta, st) { await api("PUT", id, { meta, state: st }); pull(); },
+      async load(id) { try { const j = await api("GET", id); return { title: j.meta.title, state: j.state }; } catch (e) { if (e.status === 404) return null; throw e; } },
+      async remove(d) { await api("DELETE", d.id); pull(); }
+    };
+  }
+  async function initServer() {
+    try {
+      const db = await cap("db");
+      if (db) {
+        store = claudeStore(db);
+        try { const u = await cap("user"); if (u && u.can && (await u.can("data.write")) === false) canWrite = false; } catch (e) {}
+      } else {
+        if (!/^https?:$/.test(location.protocol)) return;
+        const h = httpStore();
+        try { await h.probe(); } catch (e) { return; }
+        store = h;
+        $("logout").hidden = false;
+        $("logout").onclick = async () => { try { await fetch("/api/auth", { method: "DELETE" }); } catch (e) {} location.reload(); };
+      }
+      $("savedSec").hidden = false;
+      if (canWrite) { $("saveSrv").hidden = false; } else { $("newDoc").hidden = true; $("saveCopy").hidden = true; }
+      store.subscribe((items) => { savedList = items; renderSaved(); }, () => { $("saved").innerHTML = '<p class="empty">保存済みの一覧を読み込めませんでした。</p>'; });
+    } catch (e) { store = null; }
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
+  if (document.readyState !== "loading") init();
+  let started = false;
+  async function init() {
+    if (started) return; started = true;
+    bindStatic(); renderSites(); renderPrices();
+    $("addSite").onclick = () => { S.sites.push({ name: "", address: "", area: "", map: "", mapW: 0, mapH: 0, dispatch: "・積雪量10センチにて自動出動\n・前日21:00までに電話等にて連絡\n※別途変更は可能", handover: "当日7:00まで（積雪状況により変動する場合あり）", note: "" }); renderSites(); schedule(); };
+    $("addPrice").onclick = () => { S.prices.push({ task: "", spec: "", unit: "", price: "" }); renderPrices(); schedule(); };
+    $("save").onclick = () => savePdf();
+    $("vClose").onclick = closeViewer;
+    $("vPdf").onclick = () => viewing && savePdf(viewing, $("vPdf"));
+    $("vEdit").onclick = () => { const id = viewing && viewing._id; closeViewer(); if (id) openDoc(id); };
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("viewer").hidden) closeViewer(); });
+    $("newDoc").onclick = newDoc;
+    $("saveSrv").onclick = () => saveToServer(false);
+    $("saveCopy").onclick = () => saveToServer(true);
+    document.querySelectorAll("#tabs button").forEach((b) => b.addEventListener("click", () => {
+      document.body.dataset.view = b.dataset.v;
+      document.querySelectorAll("#tabs button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+      window.scrollTo(0, 0);
+    }));
+    initServer();
+    try { await initFonts(); refresh(); } catch (e) { $("status").textContent = "フォントの読み込みに失敗しました：" + e.message; }
+  }
+  window.__josetsu = { layout: () => layout(S), buildPdf: async () => buildPdf(layout(S)), S: () => S };
+})();
+</script>
+</html>
