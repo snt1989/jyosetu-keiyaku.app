@@ -86,6 +86,9 @@ textarea { resize: vertical; line-height: 1.55; }
 .viewer-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding-block: 10px; padding-top: calc(10px + env(safe-area-inset-top, 0px)); border-bottom: 1px solid var(--line); }
 .viewer-bar h2 { margin: 0 auto 0 0; font-size: 15px; min-width: 0; overflow-wrap: anywhere; }
 .viewer-body { flex: 1; overflow: auto; padding-block: 16px calc(24px + env(safe-area-inset-bottom, 0px)); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.chips button { font: inherit; font-size: 12px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: inherit; cursor: pointer; }
+.imp-note { background: color-mix(in srgb, var(--accent, #2b6cb0) 12%, transparent); border-radius: 8px; padding: 8px 12px; margin: 8px 0; white-space: pre-wrap; font-size: 13px; }
 .imp { max-width: 720px; margin: 0 auto; }
 .imp-row { display: grid; grid-template-columns: 8.5em minmax(0, 1fr); gap: 4px 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
 .imp-row b { font-weight: 700; font-size: 13px; }
@@ -137,6 +140,15 @@ textarea { resize: vertical; line-height: 1.55; }
       <p class="hint">前年の契約書（Word・PDF）や、紙をスキャンした画像（JPG・PNG）を選ぶと、発注者・期間・条文・現場・単価表を読み取って入力欄に入れます。反映する前に内容を確認できます。</p>
       <input type="file" id="impFile" accept=".docx,.pdf,image/*">
       <p class="hint" id="impMsg" role="status" style="margin:8px 0 0"></p>
+    </section>
+
+    <section class="sec" id="aiSec" hidden>
+      <h2>AIで読み解く・編集</h2>
+      <p class="hint">やりたいことを文章で頼むと、AIが入力欄の変更案を作ります。内容を確認してから反映できます。「契約書から読み取り」で読み込んだ書類があれば、その文章もAIに渡します。</p>
+      <textarea id="aiText" rows="4" placeholder="例：契約期間を来シーズン（12月1日〜翌3月31日）にして、特約事項に「融雪剤の散布は別途協議」を加えて"></textarea>
+      <div class="chips" id="aiChips"></div>
+      <button class="btn primary" id="aiRun" type="button">AIに頼む</button>
+      <p class="hint" id="aiMsg" role="status" style="margin:8px 0 0"></p>
     </section>
 
     <section class="sec">
@@ -208,7 +220,8 @@ textarea { resize: vertical; line-height: 1.55; }
 </div>
 <div class="viewer" id="impDlg" hidden role="dialog" aria-modal="true" aria-label="読み取り結果の確認">
   <div class="viewer-bar wrap">
-    <h2>読み取り結果の確認</h2>
+    <h2 id="impTitle">読み取り結果の確認</h2>
+    <button class="btn" id="impAi" type="button" hidden>AIで読み直す</button>
     <button class="btn" id="impCancel" type="button">キャンセル</button>
     <button class="btn primary" id="impApply" type="button">入力欄に反映</button>
   </div>
@@ -1183,14 +1196,17 @@ const FONT_BOLD_B64 = "__FONT_BOLD__";
     add("別表1 単価表", r.prices.length ? r.prices.map((p) => [p.task, p.spec.replace(/\n/g, " "), p.unit, p.price ? Number(p.price).toLocaleString("ja-JP") + "円" : ""].filter(Boolean).join("　")).join("\n") : null);
     const found = rows.filter((x) => x[1]).length;
     const box = $("impBody"); box.innerHTML = "";
+    $("impTitle").textContent = r.ai ? "AIの変更案の確認" : "読み取り結果の確認";
+    $("impAi").hidden = !!r.ai || !window.__impSrc;
     const intro = document.createElement("p"); intro.className = "hint";
-    intro.textContent = found ? "読み取れた項目です。「入力欄に反映」を押すと、現在の入力内容のうち読み取れた項目だけが置き換わります（保存済みの契約書は変わりません）。" : "契約書の項目を読み取れませんでした。ひな形に近い形式のWord・PDF、または文字がはっきり写った画像を選んでください。";
+    intro.textContent = r.ai ? (found ? "AIが作った変更案です。内容をよく確認してください。「入力欄に反映」を押すと、変更のある項目だけが置き換わります（保存済みの契約書は変わりません）。" : "AIは入力欄を変更しませんでした。") : found ? "読み取れた項目です。「入力欄に反映」を押すと、現在の入力内容のうち読み取れた項目だけが置き換わります（保存済みの契約書は変わりません）。" : "契約書の項目を読み取れませんでした。ひな形に近い形式のWord・PDF、または文字がはっきり写った画像を選んでください。";
     box.appendChild(intro);
+    if (r.note) { const n = document.createElement("div"); n.className = "imp-note"; n.textContent = r.note; box.appendChild(n); }
     r.warnings.forEach((w) => { const p = document.createElement("p"); p.className = "warn"; p.textContent = w; box.appendChild(p); });
     rows.forEach(([l, v]) => {
       const d = document.createElement("div"); d.className = "imp-row" + (v ? "" : " none");
       const a = document.createElement("b"); a.textContent = l;
-      const b = document.createElement("span"); b.textContent = v ? showText(v) : "読み取れませんでした（現在の入力を残します）";
+      const b = document.createElement("span"); b.textContent = v ? showText(v) : (r.ai ? "変更なし" : "読み取れませんでした（現在の入力を残します）");
       d.appendChild(a); d.appendChild(b); box.appendChild(d);
     });
     $("impApply").hidden = !found;
@@ -1204,9 +1220,9 @@ const FONT_BOLD_B64 = "__FONT_BOLD__";
     if (r.contractor) S.contractor = Object.assign({ name: "", address: "", rep: "" }, r.contractor);
     if (r.sites.length) S.sites = r.sites;
     if (r.prices.length) S.prices = r.prices;
-    delete S._id; dirty = true; persist(); refillForm(); refresh(); renderSaved();
+    if (!r.ai) delete S._id; dirty = true; persist(); refillForm(); refresh(); renderSaved();
     $("impDlg").hidden = true; pending = null;
-    toast("読み取った内容を入力欄に反映しました。内容を確認してください。");
+    toast(r.ai ? "AIの変更案を入力欄に反映しました。内容を確認してください。" : "読み取った内容を入力欄に反映しました。内容を確認してください。");
     document.body.dataset.view = "form";
   }
   async function onImportFile(file) {
@@ -1229,6 +1245,102 @@ const FONT_BOLD_B64 = "__FONT_BOLD__";
     } finally { inp.disabled = false; inp.value = ""; }
   }
 
+  /* ---------- AIで読み解く・編集 ---------- */
+  const AI_CHIPS = ["契約期間を来シーズン（12月1日〜翌3月31日）にする", "文章を契約書らしい表現に整える", "誤字・脱字・表記ゆれを直す", "金額・日付・名称に矛盾がないか確認して直す"];
+  const aiStr = (v) => (typeof v === "string" ? v : v == null ? "" : String(v));
+  const srcToText = (src) => {
+    if (!src) return "";
+    const tb = (src.tables || []).map((t) => (Array.isArray(t) ? t : (t && t.rows) || []).map((row) => (Array.isArray(row) ? row : []).map((c) => aiStr(c).replace(/\s+/g, " ")).join(" | ")).join("\n")).filter(Boolean);
+    return (src.lines || []).join("\n") + (tb.length ? "\n\n【表】\n" + tb.join("\n\n") : "");
+  };
+  const aiPlain = () => {
+    const c = JSON.parse(JSON.stringify(S)); delete c._id;
+    (c.sites || []).forEach((s) => { delete s.map; delete s.mapW; delete s.mapH; });
+    return c;
+  };
+  function aiPrompt(instr, srcText) {
+    return [
+      "あなたは、日本語の「除雪等業務委託契約書」（発注者・請負者・契約期間・業務範囲・委託金額・支払条件・損害賠償・契約解除・特約事項、別紙の現場情報、別表1の単価表）の作成を手伝うアシスタントです。",
+      "下の「現在の入力内容」(JSON)をもとに、依頼を実行し、変更が必要な項目だけをJSONで返してください。",
+      "",
+      "【出力形式】JSONオブジェクト1つだけを返す（前後の説明・コードブロックは不要）。使えるキー：",
+      '- orderer / contractor: {"name":"会社名・氏名","address":"住所","rep":"代表者名"}',
+      '- job（業務の名称）, scope（業務範囲）, amount（委託金額の文）, pay（支払条件）, damage（損害賠償）, cancel（契約解除）, special（特約事項）: 文章。改行は \\n',
+      '- start, end: 契約期間。YYYY-MM-DD。renewal: 再契約の文を入れるか(true/false)',
+      '- sites: 別紙の現場の配列。[{"name","address","area"(㎡の数字のみ),"dispatch"(出動条件。改行は\\n),"handover"(引渡時間),"note"(特記事項)}]。変更するときは全件を返す',
+      '- prices: 別表1の単価の配列。[{"task"(業務),"spec"(内容),"unit"(単位),"price"(円の数字のみ)}]。変更するときは全件を返す',
+      '- note: 何をどう変えたか、確認が必要な点を、日本語で1〜4文',
+      "",
+      "【守ること】",
+      "- 変更しない項目はキーごと省く。すでに今の入力と同じ内容は返さない。",
+      "- 依頼や参考文書に書かれていない会社名・住所・金額・日付を作らない。分からないことは変更せず、noteで確認を促す。",
+      "- 条文は、現在の文体（です・ます調でなく、契約書らしい「〜とする。」「〜ものとする。」）に合わせる。",
+      "- 依頼が質問や確認だけなら、入力は変えず、noteに答えを書く。",
+      "",
+      "【現在の入力内容】", JSON.stringify(aiPlain()),
+      srcText ? "\n【参考文書（読み込んだ書類から取り出した文章。誤読が含まれることがある）】\n" + srcText.slice(0, 30000) : "",
+      "\n【依頼】", instr || "参考文書の内容を読み解いて、入力内容のうち書類から読み取れる項目を、書類のとおりに入れてください。"
+    ].join("\n");
+  }
+  async function askAI(prompt) {
+    const sample = await cap("sample");
+    if (sample) {
+      try { return (await sample(prompt, { cache: false, modelTier: "default" })).text; }
+      catch (e) { throw new Error(e && e.code === "not_granted" ? "AIの利用が許可されませんでした。" : (e && e.message) || "AIの呼び出しに失敗しました。"); }
+    }
+    let r;
+    try { r = await fetch("/api/ai", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prompt }) }); }
+    catch (e) { throw new Error("AIに接続できませんでした。通信状況を確認してください。"); }
+    if (r.status === 401) { location.reload(); throw new Error("ログインし直してください。"); }
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || "AIの応答エラー (" + r.status + ")");
+    return j.text || "";
+  }
+  function aiToResult(text) {
+    const s = String(text || "").replace(/```(?:json)?/g, ""), a = s.indexOf("{"), b = s.lastIndexOf("}");
+    let j; try { j = JSON.parse(s.slice(a, b + 1)); } catch (e) { throw new Error("AIの返答を読み取れませんでした。もう一度試してください。"); }
+    if (!j || typeof j !== "object") throw new Error("AIの返答を読み取れませんでした。もう一度試してください。");
+    const r = { ai: true, sites: [], prices: [], warnings: [], note: aiStr(j.note).trim() };
+    ["job", "scope", "amount", "pay", "damage", "cancel", "special"].forEach((k) => { const v = aiStr(j[k]).trim(); if (typeof j[k] === "string" && v && v !== S[k]) r[k] = v; });
+    const okDate = (v) => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) && !isNaN(Date.parse(v));
+    const ns = okDate(j.start) ? j.start : S.start, ne = okDate(j.end) ? j.end : S.end, nr = typeof j.renewal === "boolean" ? j.renewal : S.renewal;
+    if (ns !== S.start || ne !== S.end || nr !== S.renewal) {
+      r.start = ns; r.end = ne; r.renewal = nr;
+      if (ne < ns) r.warnings.push("契約終了日が開始日より前になっています。反映後に日付を直してください。");
+    }
+    ["orderer", "contractor"].forEach((k) => {
+      if (!j[k] || typeof j[k] !== "object") return;
+      const m = { name: aiStr(j[k].name ?? S[k].name), address: aiStr(j[k].address ?? S[k].address), rep: aiStr(j[k].rep ?? S[k].rep) };
+      if (m.name !== S[k].name || m.address !== S[k].address || m.rep !== S[k].rep) r[k] = m;
+    });
+    if (Array.isArray(j.sites)) {
+      const ns2 = j.sites.slice(0, 30).filter((x) => x && typeof x === "object").map((x) => {
+        const old = S.sites.find((o) => o.name === aiStr(x.name)) || {};
+        return { name: aiStr(x.name), address: aiStr(x.address), area: aiStr(x.area).replace(/[^\d.]/g, ""), map: old.map || "", mapW: old.mapW || 0, mapH: old.mapH || 0, dispatch: aiStr(x.dispatch), handover: aiStr(x.handover), note: aiStr(x.note) };
+      });
+      const key = (a) => JSON.stringify(a.map((o) => [o.name, o.address, String(o.area), o.dispatch, o.handover, o.note]));
+      if (ns2.length && key(ns2) !== key(S.sites)) r.sites = ns2;
+    }
+    if (Array.isArray(j.prices)) {
+      const np = j.prices.slice(0, 60).filter((x) => x && typeof x === "object").map((x) => ({ task: aiStr(x.task), spec: aiStr(x.spec), unit: aiStr(x.unit), price: aiStr(x.price).replace(/[^\d]/g, "") }));
+      const key = (a) => JSON.stringify(a.map((o) => [o.task, o.spec, o.unit, String(o.price)]));
+      if (np.length && key(np) !== key(S.prices)) r.prices = np;
+    }
+    return r;
+  }
+  async function runAI(instr, useSrc) {
+    const msg = $("aiMsg"), btn = $("aiRun"), btn2 = $("impAi");
+    const src = useSrc && window.__impSrc ? srcToText(window.__impSrc) : "";
+    if (!instr && !src) { msg.textContent = "AIにやってほしいことを入力してください。"; return; }
+    btn.disabled = btn2.disabled = true; msg.textContent = "AIが読み解いています…（数十秒かかることがあります）";
+    try {
+      const r = aiToResult(await askAI(aiPrompt(instr, src)));
+      msg.textContent = "";
+      showImportResult(r);
+    } catch (e) { msg.textContent = "AIが使えませんでした：" + ((e && e.message) || e); }
+    finally { btn.disabled = btn2.disabled = false; }
+  }
+
   document.addEventListener("DOMContentLoaded", init);
   if (document.readyState !== "loading") init();
   let started = false;
@@ -1240,6 +1352,10 @@ const FONT_BOLD_B64 = "__FONT_BOLD__";
     $("save").onclick = () => savePdf();
     $("impFile").addEventListener("change", (e) => onImportFile(e.target.files[0]));
     $("impApply").onclick = applyImport;
+    $("aiSec").hidden = false;
+    AI_CHIPS.forEach((c) => { const b = document.createElement("button"); b.type = "button"; b.textContent = c; b.onclick = () => { $("aiText").value = c; $("aiText").focus(); }; $("aiChips").appendChild(b); });
+    $("aiRun").onclick = () => runAI($("aiText").value.trim(), !!window.__impSrc);
+    $("impAi").onclick = () => { $("impDlg").hidden = true; pending = null; runAI("", true); };
     $("impCancel").onclick = () => { $("impDlg").hidden = true; pending = null; };
     $("vClose").onclick = closeViewer;
     $("vPdf").onclick = () => viewing && savePdf(viewing, $("vPdf"));
